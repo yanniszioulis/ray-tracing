@@ -7,7 +7,9 @@ public class OctreeNode
     Bounds nodeBounds; 
     float minSize;
     Bounds[] childBounds;
-    OctreeNode[] children = null;
+    public OctreeNode[] children = null;
+    public Material materialID;
+    public bool mid1 = false;
 
     public OctreeNode(Bounds b, float minNodeSize){
         nodeBounds = b;
@@ -34,6 +36,17 @@ public class OctreeNode
 
     public void DivideAndAdd(GameObject go){
         if(nodeBounds.size.y <= minSize){
+            // set material ID here since it will be a leaf node 
+            if(nodeBounds.Intersects(go.GetComponent<Collider>().bounds)){
+                materialID = go.GetComponent<Renderer>().material;
+                // if this is null, we will set a bool to true to assign it a default material 
+                // during parsing 
+                if(materialID==null){
+                    mid1 = true; 
+                }
+                // the only other time materialID should be null is when 
+                // it is intersecting NOTHING (air)
+            }
             return;
         }
         if(children == null){
