@@ -10,6 +10,7 @@ public class OctreeNode
     public OctreeNode[] children = null;
     public Material materialID;
     public bool mid1 = false;
+    public bool dividing = false; 
 
     public OctreeNode(Bounds b, float minNodeSize){
         nodeBounds = b;
@@ -52,7 +53,7 @@ public class OctreeNode
         if(children == null){
             children = new OctreeNode[8];
         }
-        bool dividing = false; 
+        
         for(int i = 0; i < 8; i++){
             if(children[i] == null){
                 children[i] = new OctreeNode(childBounds[i], minSize);
