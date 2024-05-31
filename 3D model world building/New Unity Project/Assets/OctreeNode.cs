@@ -18,7 +18,7 @@ public class OctreeNode
         minSize = minNodeSize;
 
         float quarter = nodeBounds.size.y/4.0f;
-        float childLength = nodeBounds.size.y/2;
+        float childLength = nodeBounds.size.y/2.0f;
         Vector3 childSize = new Vector3(childLength, childLength, childLength);
         childBounds = new Bounds[8];
         childBounds[0] = new Bounds(nodeBounds.center + new Vector3(-quarter, quarter, -quarter), childSize);
@@ -62,8 +62,8 @@ public class OctreeNode
             if(children[i] == null){
                 children[i] = new OctreeNode(childBounds[i], minSize);
             }
-            Bounds checkOuter = new Bounds(goBounds.center, goBounds.size - new Vector3(0.001f, 0.001f, 0.001f));
-            if(childBounds[i].Intersects(goBounds) && childBounds[i].Intersects(checkOuter)){ 
+            Bounds checkInner = new Bounds(goBounds.center, goBounds.size - new Vector3(0.001f, 0.001f, 0.001f));
+            if(childBounds[i].Intersects(goBounds) && childBounds[i].Intersects(checkInner)){ 
                 dividing = true;
                 children[i].DivideAndAdd(go);
             }
