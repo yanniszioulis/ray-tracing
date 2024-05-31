@@ -37,9 +37,12 @@ public class OctreeNode
     }
 
     public void DivideAndAdd(GameObject go){
-        if(nodeBounds.size.y <= minSize || IsFullyEncapsulated(go.GetComponent<Collider>().bounds)){
+        Bounds goBounds = go.GetComponent<Collider>().bounds;
+        Vector3 rgoSize = RoundSize(goBounds.size);
+        Bounds rgoBounds = new Bounds(goBounds.center, rgoSize);
+        if(nodeBounds.size.y <= minSize || IsFullyEncapsulated(rgoBounds)){
             // set material ID here since it will be a leaf node 
-            if(nodeBounds.Intersects(go.GetComponent<Collider>().bounds)){
+            if(nodeBounds.Intersects(goBounds)){
                 materialID = go.GetComponent<Renderer>().material;
                 // if this is null, we will set a bool to true to assign it a default material 
                 // during parsing 
@@ -59,7 +62,8 @@ public class OctreeNode
             if(children[i] == null){
                 children[i] = new OctreeNode(childBounds[i], minSize);
             }
-            if(childBounds[i].Intersects(go.GetComponent<Collider>().bounds)){
+            Bounds checkOuter = new Bounds(goBounds.center, goBounds.size - new Vector3(0.001f, 0.001f, 0.001f));
+            if(childBounds[i].Intersects(goBounds) && childBounds[i].Intersects(checkOuter)){ 
                 dividing = true;
                 children[i].DivideAndAdd(go);
             }
@@ -70,27 +74,20 @@ public class OctreeNode
     }
 
     private bool IsFullyEncapsulated(Bounds colliderBounds){
-        foreach (Vector3 corner in GetCorners()){
-            if (!colliderBounds.Contains(corner)){
-                return false;
-            }
+        return colliderBounds.Contains(nodeBounds.min) && colliderBounds.Contains(nodeBounds.max);
+    }
+    private Vector3 RoundSize(Vector3 bsize){
+        float Round(float value){
+            return Mathf.Round(value / minSize) * minSize;
         }
-        return true;
-    }
 
-    private Vector3[] GetCorners(){
-        Vector3[] corners = new Vector3[8];
-        corners[0] = nodeBounds.min;
-        corners[1] = new Vector3(nodeBounds.min.x, nodeBounds.min.y, nodeBounds.max.z);
-        corners[2] = new Vector3(nodeBounds.min.x, nodeBounds.max.y, nodeBounds.min.z);
-        corners[3] = new Vector3(nodeBounds.min.x, nodeBounds.max.y, nodeBounds.max.z);
-        corners[4] = new Vector3(nodeBounds.max.x, nodeBounds.min.y, nodeBounds.min.z);
-        corners[5] = new Vector3(nodeBounds.max.x, nodeBounds.min.y, nodeBounds.max.z);
-        corners[6] = new Vector3(nodeBounds.max.x, nodeBounds.max.y, nodeBounds.min.z);
-        corners[7] = nodeBounds.max;
-        return corners;
+        return new Vector3(
+            Round(bsize.x),
+            Round(bsize.y),
+            Round(bsize.z)
+        );
     }
-
+    
     public void TraverseAndWrite(StreamWriter writer, int depth = 0){
         string indent = new string(' ', depth * 2);
         writer.WriteLine($"{indent}Node Bounds: {nodeBounds}");
