@@ -21,14 +21,14 @@ public class OctreeNode
         float childLength = nodeBounds.size.y/2.0f;
         Vector3 childSize = new Vector3(childLength, childLength, childLength);
         childBounds = new Bounds[8];
-        childBounds[0] = new Bounds(nodeBounds.center + new Vector3(-quarter, quarter, -quarter), childSize);
-        childBounds[1] = new Bounds(nodeBounds.center + new Vector3(quarter, quarter, -quarter), childSize);
-        childBounds[2] = new Bounds(nodeBounds.center + new Vector3(-quarter, quarter, quarter), childSize);
-        childBounds[3] = new Bounds(nodeBounds.center + new Vector3(quarter, quarter, quarter), childSize);
-        childBounds[4] = new Bounds(nodeBounds.center + new Vector3(-quarter, -quarter, -quarter), childSize);
-        childBounds[5] = new Bounds(nodeBounds.center + new Vector3(quarter, -quarter, -quarter), childSize); 
-        childBounds[6] = new Bounds(nodeBounds.center + new Vector3(-quarter, -quarter, quarter), childSize);
-        childBounds[7] = new Bounds(nodeBounds.center + new Vector3(quarter, -quarter, quarter), childSize);
+        childBounds[0] = new Bounds(nodeBounds.center + new Vector3(-quarter, -quarter, -quarter), childSize);
+        childBounds[1] = new Bounds(nodeBounds.center + new Vector3(-quarter, -quarter, quarter), childSize);
+        childBounds[2] = new Bounds(nodeBounds.center + new Vector3(-quarter, quarter, -quarter), childSize);
+        childBounds[3] = new Bounds(nodeBounds.center + new Vector3(-quarter, quarter, quarter), childSize);
+        childBounds[4] = new Bounds(nodeBounds.center + new Vector3(quarter, -quarter, -quarter), childSize);
+        childBounds[5] = new Bounds(nodeBounds.center + new Vector3(quarter, -quarter, quarter), childSize); 
+        childBounds[6] = new Bounds(nodeBounds.center + new Vector3(quarter, quarter, -quarter), childSize);
+        childBounds[7] = new Bounds(nodeBounds.center + new Vector3(quarter, quarter, quarter), childSize);
 
     }
 
