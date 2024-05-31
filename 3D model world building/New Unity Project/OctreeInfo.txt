@@ -9,7 +9,39 @@ Dividing: True
   Node Bounds: Center: (8.0, 8.0, 0.0), Extents: (4.0, 4.0, 4.0)
   Material ID: None
   Mid1: False
-  Dividing: False
+  Dividing: True
+    Node Bounds: Center: (6.0, 10.0, -2.0), Extents: (2.0, 2.0, 2.0)
+    Material ID: None
+    Mid1: False
+    Dividing: False
+    Node Bounds: Center: (10.0, 10.0, -2.0), Extents: (2.0, 2.0, 2.0)
+    Material ID: None
+    Mid1: False
+    Dividing: False
+    Node Bounds: Center: (6.0, 10.0, 2.0), Extents: (2.0, 2.0, 2.0)
+    Material ID: None
+    Mid1: False
+    Dividing: False
+    Node Bounds: Center: (10.0, 10.0, 2.0), Extents: (2.0, 2.0, 2.0)
+    Material ID: None
+    Mid1: False
+    Dividing: False
+    Node Bounds: Center: (6.0, 6.0, -2.0), Extents: (2.0, 2.0, 2.0)
+    Material ID: None
+    Mid1: False
+    Dividing: False
+    Node Bounds: Center: (10.0, 6.0, -2.0), Extents: (2.0, 2.0, 2.0)
+    Material ID: None
+    Mid1: False
+    Dividing: False
+    Node Bounds: Center: (6.0, 6.0, 2.0), Extents: (2.0, 2.0, 2.0)
+    Material ID: BlueMaterial (Instance)
+    Mid1: False
+    Dividing: False
+    Node Bounds: Center: (10.0, 6.0, 2.0), Extents: (2.0, 2.0, 2.0)
+    Material ID: None
+    Mid1: False
+    Dividing: False
   Node Bounds: Center: (0.0, 8.0, 8.0), Extents: (4.0, 4.0, 4.0)
   Material ID: None
   Mid1: False

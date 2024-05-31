@@ -77,14 +77,14 @@ public class OctreeNode
         return colliderBounds.Contains(nodeBounds.min) && colliderBounds.Contains(nodeBounds.max);
     }
     private Vector3 RoundSize(Vector3 bsize){
-        float Round(float value){
+        float RoundCoord(float value){
             return Mathf.Round(value / minSize) * minSize;
         }
 
         return new Vector3(
-            Round(bsize.x),
-            Round(bsize.y),
-            Round(bsize.z)
+            RoundCoord(bsize.x),
+            RoundCoord(bsize.y),
+            RoundCoord(bsize.z)
         );
     }
     
