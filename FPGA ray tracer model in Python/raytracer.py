@@ -3,10 +3,10 @@ from PIL import Image
 
 coord_bit_length = 2
 
-cam_pos = np.array([3, 2, 0])     # Camera position in world space
-cam_norm = np.array([0, 0, 1])    # Camera direction vector 
+cam_pos = np.array([3, 3, 0])      # Camera position in world space
+cam_norm = np.array([0, 0, 10])    # Camera direction vector 
 cam_up = np.array([0, 1, 0])
-cam_right = np.cross(cam_norm, cam_up)
+cam_right = np.array([1, 0, 0])     #np.cross(cam_norm, cam_up)
 
 im_height = 72
 im_width = 128
