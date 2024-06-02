@@ -1,21 +1,27 @@
 import numpy as np
 from PIL import Image
 
-coord_bit_length = 2
 
-cam_pos = np.array([3, 3, 0])      # Camera position in world space
-cam_norm = np.array([0, 0, 10])    # Camera direction vector 
+## Play around with these: 
+
+coord_bit_length = 10   # The FPGA will probably have a max bit length of 10 for coords
+
+cam_pos = np.array([600, 500, 0])      # Camera position in world space
+cam_norm = np.array([0, 0, 60])    # Camera direction vector 
 cam_up = np.array([0, 1, 0])
 cam_right = np.array([1, 0, 0])     #np.cross(cam_norm, cam_up)
 
-im_height = 72
-im_width = 128
+im_height = 256
+im_width = 256
+
+
+octree = [0, 0, 0, 0, 2, 0, 0, 1]   # Back top right corner is white cube
+material_table = [[0, 0, 0], [255, 255, 255], [0, 255, 0]]  # 0 for nothing, 1 for white
+
+
 
 # Placeholder for image output
 image = np.zeros((im_height, im_width, 3), dtype=np.uint8)  # Assuming RGB image
-
-octree = [0, 0, 0, 0, 0, 0, 0, 1]   # Back top right corner is white cube
-material_table = [[0, 0, 0], [255, 255, 255]]  # 0 for nothing, 1 for white
 
 def roundPosition(position):
     return np.round(position).astype(int)
@@ -61,6 +67,7 @@ def stepRay(ray_pos, ray_dir, oct_size, aabb_min, aabb_max):
 
 for y in range(im_height):
     for x in range(im_width):
+        #print(x, y)
         centered_x = x - (im_width / 2)
         centered_y = (im_height / 2) - y
         ray_dir = (cam_right * centered_x + cam_up * centered_y + cam_norm)
