@@ -37,12 +37,12 @@ module RayProcessor #(
     logic [COORD_BIT_LEN-1:0]   world_max_x;
     logic [COORD_BIT_LEN-1:0]   world_max_y;
     logic [COORD_BIT_LEN-1:0]   world_max_z;
-    logic [COORD_BIT_LEN-1:0]   aabb_min_x;
-    logic [COORD_BIT_LEN-1:0]   aabb_min_y;
-    logic [COORD_BIT_LEN-1:0]   aabb_min_z;
-    logic [COORD_BIT_LEN-1:0]   aabb_max_x;
-    logic [COORD_BIT_LEN-1:0]   aabb_max_y;
-    logic [COORD_BIT_LEN-1:0]   aabb_max_z; 
+    logic [COORD_BIT_LEN:0]   aabb_min_x;
+    logic [COORD_BIT_LEN:0]   aabb_min_y;
+    logic [COORD_BIT_LEN:0]   aabb_min_z;
+    logic [COORD_BIT_LEN:0]   aabb_max_x;
+    logic [COORD_BIT_LEN:0]   aabb_max_y;
+    logic [COORD_BIT_LEN:0]   aabb_max_z; 
 
     logic [31:0]                reg_ray_dir_x;
     logic [31:0]                reg_ray_dir_y;
@@ -85,6 +85,9 @@ module RayProcessor #(
     logic [7:0]                 temp_g;
     logic [7:0]                 temp_b;
 
+    logic                       update;
+    logic [31:0]                hold;
+
     typedef enum logic [3:0] { 
         INITIALISE,                     // 0
         IDLE,                           // 1
@@ -95,12 +98,12 @@ module RayProcessor #(
         RAY_STEP_ADJUST_DIR_VEC,        // 6
         RAY_STEP_CHECK_PROXIMITY,       // 7
         RAY_STEP,                       // 8
-        RAY_STEP_POSITION_CALC,
-        RAY_STEP_CHECK,                 // 9
-        RAY_STEP_BRANCH,                // 10
-        COLOUR_FORMAT,                  // 11
-        RAY_OUT_OF_BOUND,               // 12
-        OUTPUT_COLOUR                   // 13
+        RAY_STEP_POSITION_CALC,         // 9
+        RAY_STEP_CHECK,                 // 10
+        RAY_STEP_BRANCH,                // 11
+        COLOUR_FORMAT,                  // 12
+        RAY_OUT_OF_BOUND,               // 13
+        OUTPUT_COLOUR                   // 14
      } state_t;
 
      state_t state, next_state;
@@ -123,7 +126,7 @@ module RayProcessor #(
 
                     ready <= 0;
                     valid_data_out <= 0;
-
+                    valid_depth <= 0;
                     world_size <= 2**COORD_BIT_LEN;
                     oct_size <= 2**COORD_BIT_LEN;
 
@@ -145,6 +148,23 @@ module RayProcessor #(
                     ray_pos_x <= camera_pos_x;
                     ray_pos_y <= camera_pos_y;
                     ray_pos_z <= camera_pos_z;
+
+                    temp_ray_pos_x <= 0;
+                    temp_ray_pos_y <= 0;
+                    temp_ray_pos_z <= 0;
+
+                    temp_just_outside_x <= 0;
+                    temp_just_outside_y <= 0;
+                    temp_just_outside_z <= 0;
+                    just_outside_x <= 0;
+                    just_outside_y <= 0;
+                    just_outside_z <= 0;
+
+                    just_outside_AABB <= 0; 
+                    within_world <= 0;
+                    octant_no <= 0;
+                    dir_big_enough <= 0;
+                    received_material_id <= 0;
                     /* verilator lint_on WIDTH */
 
                     // TODO: this array initialisation needs to move - shouldn't be repeated for each ray.
@@ -234,25 +254,26 @@ module RayProcessor #(
                 end
                 RAY_STEP_CHECK_PROXIMITY: begin // 7
                     
-                    if (ray_pos_x == aabb_min_x - 1 || ray_pos_x == aabb_max_x + 1) begin
+                    if (temp_ray_pos_x == aabb_min_x - 1 || temp_ray_pos_x == aabb_max_x + 1) begin
                         just_outside_x <= 1;
                     end else begin
                         just_outside_x <= 0;
                     end
 
-                    if (ray_pos_y == aabb_min_y - 1 || ray_pos_y == aabb_max_y + 1) begin
+                    if (temp_ray_pos_y == aabb_min_y - 1 || temp_ray_pos_y == aabb_max_y + 1) begin
                         just_outside_y <= 1;
                     end else begin
                         just_outside_y <= 0;
                     end
 
-                    if (ray_pos_z == aabb_min_z - 1 || ray_pos_z == aabb_max_z + 1) begin
+                    if (temp_ray_pos_z == aabb_min_z - 1 || temp_ray_pos_z == aabb_max_z + 1) begin
                         just_outside_z <= 1;
                     end else begin
                         just_outside_z <= 0;
                     end
 
                     just_outside_AABB <= just_outside_x && just_outside_y && just_outside_z;
+                    update <= 0;
 
                 end
                 RAY_STEP: begin // 8
@@ -264,9 +285,8 @@ module RayProcessor #(
                     /* verilator lint_on WIDTH */
                     
 
-
                 end
-                RAY_STEP_POSITION_CALC: begin
+                RAY_STEP_POSITION_CALC: begin // 9
 
                     within_x <= (temp_ray_pos_x >= aabb_min_x && temp_ray_pos_x <= aabb_max_x) ? 1 : 0;
                     within_y <= (temp_ray_pos_y >= aabb_min_y && temp_ray_pos_y <= aabb_max_y) ? 1 : 0;
@@ -296,11 +316,18 @@ module RayProcessor #(
                     //temp_just_outside_AABB <= temp_just_outside_x && temp_just_outside_y && temp_just_outside_z;
                 
                 end
-                RAY_STEP_CHECK: begin // 9
+                RAY_STEP_CHECK: begin // 10
 
 
-                    if ((within_x && within_y && within_z) || (within_x && temp_just_outside_y && within_z) || (within_x && within_y && temp_just_outside_z) || (within_x && temp_just_outside_y && temp_just_outside_z) || (temp_just_outside_x && temp_just_outside_y && temp_ray_pos_z) || (temp_just_outside_x && within_y && temp_ray_pos_z) || (temp_just_outside_x && temp_just_outside_y && within_z) || (temp_just_outside_x && within_y && within_z)) begin
-                        ray_pos_x <= (temp_ray_pos_x >= aabb_max_x) ? aabb_max_x : temp_ray_pos_x;
+                    if ((within_x && within_y && within_z) || (within_x && temp_just_outside_y && within_z) || (within_x && within_y && temp_just_outside_z) || (within_x && temp_just_outside_y && temp_just_outside_z) || (temp_just_outside_x && temp_just_outside_y && temp_just_outside_z) || (temp_just_outside_x && within_y && temp_just_outside_z) || (temp_just_outside_x && temp_just_outside_y && within_z) || (temp_just_outside_x && within_y && within_z)) begin
+                        update <= within_x && temp_just_outside_y && within_z;
+                        // ray_pos_x <= (temp_ray_pos_x >= aabb_max_x) ? aabb_max_x : temp_ray_pos_x;
+                        if (temp_ray_pos_x >= aabb_max_x) begin
+                            hold <= aabb_max_x + 1;
+                            ray_pos_x <= aabb_max_x;
+                        end else begin
+                            ray_pos_x <= temp_ray_pos_x;
+                        end
                         ray_pos_y <= (temp_ray_pos_y >= aabb_max_y) ? aabb_max_y : temp_ray_pos_y;
                         ray_pos_z <= (temp_ray_pos_z >= aabb_max_z) ? aabb_max_z : temp_ray_pos_z;
                     end
@@ -311,7 +338,7 @@ module RayProcessor #(
                     reg_ray_dir_z <= (reg_ray_dir_z == 1) ? 1 : reg_ray_dir_z >> 1;
                     
                 end
-                RAY_STEP_BRANCH: begin // 10
+                RAY_STEP_BRANCH: begin // 11
 
                     within_world_x <= (ray_pos_x <= world_max_x) ? 1 : 0;
                     within_world_y <= (ray_pos_y <= world_max_y) ? 1 : 0;
@@ -320,7 +347,7 @@ module RayProcessor #(
                     within_world <= within_world_x && within_world_y && within_world_z;
 
                 end
-                COLOUR_FORMAT: begin // 11
+                COLOUR_FORMAT: begin // 12
 
                     case(received_material_id) 
                         1: begin
@@ -333,15 +360,11 @@ module RayProcessor #(
                             temp_g <= 255; 
                             temp_b <= 0;
                         end
-                        0: begin
-                            temp_r <= 55; 
-                            temp_g <= 55; 
-                            temp_b <= 55;
-                        end
+                        default: $stop;
                     endcase
 
                 end
-                RAY_OUT_OF_BOUND: begin // 12
+                RAY_OUT_OF_BOUND: begin // 13
                     
                     // INFO: Change background colour here
                     temp_r <= 55; 
@@ -349,7 +372,7 @@ module RayProcessor #(
                     temp_b <= 55;
 
                 end
-                OUTPUT_COLOUR: begin // 13
+                OUTPUT_COLOUR: begin // 14
                     
                     r <= temp_r;
                     g <= temp_g;
@@ -367,53 +390,53 @@ module RayProcessor #(
     always_comb begin
         next_state = state;
         case (state)
-            INITIALISE: begin
+            INITIALISE: begin // 0
                 next_state = IDLE;
             end
-            IDLE: begin
+            IDLE: begin // 1
                 next_state = valid ? RAY_TRAVERSE_INITIALISE : IDLE;
             end
-            RAY_TRAVERSE_INITIALISE: begin
+            RAY_TRAVERSE_INITIALISE: begin // 2
                 next_state = RAY_TRAVERSE_OCTANT_NO;
             end
-            RAY_TRAVERSE_OCTANT_NO: begin
+            RAY_TRAVERSE_OCTANT_NO: begin // 3
                 next_state = RAY_TRAVERSE_ADJUST;
             end
-            RAY_TRAVERSE_ADJUST: begin
+            RAY_TRAVERSE_ADJUST: begin // 4
                 next_state = RAY_TRAVERSE_UPDATE;
             end
-            RAY_TRAVERSE_UPDATE: begin
+            RAY_TRAVERSE_UPDATE: begin // 5
                 if (valid_depth) begin
                     next_state = RAY_TRAVERSE_OCTANT_NO;
                 end else begin
                     next_state = (received_material_id > 0) ? COLOUR_FORMAT : RAY_STEP_ADJUST_DIR_VEC;
                 end
             end
-            RAY_STEP_ADJUST_DIR_VEC: begin
+            RAY_STEP_ADJUST_DIR_VEC: begin // 6
                 next_state = dir_big_enough ? RAY_STEP_CHECK_PROXIMITY : RAY_STEP_ADJUST_DIR_VEC;
             end
-            RAY_STEP_CHECK_PROXIMITY: begin
+            RAY_STEP_CHECK_PROXIMITY: begin // 7
                 next_state = (!just_outside_AABB) ? RAY_STEP : RAY_STEP_BRANCH;
             end
-            RAY_STEP: begin
+            RAY_STEP: begin // 8
                 next_state = RAY_STEP_POSITION_CALC;
             end
-            RAY_STEP_POSITION_CALC: begin
+            RAY_STEP_POSITION_CALC: begin // 9
                 next_state = RAY_STEP_CHECK;
             end
-            RAY_STEP_CHECK: begin
+            RAY_STEP_CHECK: begin // 10
                 next_state = RAY_STEP_CHECK_PROXIMITY;
             end
-            RAY_STEP_BRANCH: begin
+            RAY_STEP_BRANCH: begin // 11
                 next_state = within_world ? RAY_TRAVERSE_INITIALISE : RAY_OUT_OF_BOUND;
             end
-            COLOUR_FORMAT: begin
+            COLOUR_FORMAT: begin // 12
                 next_state = OUTPUT_COLOUR;
             end
-            RAY_OUT_OF_BOUND: begin
+            RAY_OUT_OF_BOUND: begin // 13
                 next_state = OUTPUT_COLOUR;
             end
-            OUTPUT_COLOUR: begin
+            OUTPUT_COLOUR: begin // 14
                 if (loop_index > image_height * image_width) begin
                     next_state = IDLE;
                 end else begin
