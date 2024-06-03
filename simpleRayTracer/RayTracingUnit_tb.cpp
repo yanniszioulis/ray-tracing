@@ -44,7 +44,7 @@ int main(int argc, char** argv, char** env) {
     ppmfile << "P3\n" << image_width << " " << image_height << "\n255\n";
 
     // Simulate for a number of cycles
-    for (int i = 0; i <  1100 * (image_height * image_width) + 15; i++) {
+    for (int i = 0; i <  300 * (image_height * image_width) + 15; i++) {
         // Toggle clock
         for (int clk = 0; clk<2; clk++) {
             tfp->dump(2*i+clk);

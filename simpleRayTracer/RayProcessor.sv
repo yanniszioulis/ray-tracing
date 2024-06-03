@@ -49,9 +49,9 @@ module RayProcessor #(
     logic [31:0]                reg_ray_dir_z;
 
     // Ray setup.
-    logic [COORD_BIT_LEN-1:0]   ray_pos_x;
-    logic [COORD_BIT_LEN-1:0]   ray_pos_y;
-    logic [COORD_BIT_LEN-1:0]   ray_pos_z;
+    logic [COORD_BIT_LEN:0]   ray_pos_x;
+    logic [COORD_BIT_LEN:0]   ray_pos_y;
+    logic [COORD_BIT_LEN:0]   ray_pos_z;
 
     // Octree setup
     // logic [31:0]                root;
@@ -59,7 +59,7 @@ module RayProcessor #(
     // logic [31:0]                octree [0:7];
 
     // Traversal intermediate logic
-    logic [31:0]                depth;
+    int                depth;
     logic [2:0]                 octant_no; 
 
     // Ray stepping intermediate logic            
@@ -87,6 +87,12 @@ module RayProcessor #(
 
     logic                       update;
     logic [31:0]                hold;
+
+    logic                       in_state_12;
+    logic [2:0]                 z;
+    logic [2:0]                 y;
+    logic [2:0]                 x;
+    logic [2:0]                 xprime;
 
     typedef enum logic [3:0] { 
         INITIALISE,                     // 0
@@ -177,11 +183,11 @@ module RayProcessor #(
                     // octree[6] <= 0;
                     // octree[7] <= 1;
 
-                    node[0] <= 0;
-                    node[1] <= 0;
-                    node[2] <= 0;
-                    node[3] <= 0;
-                    node[4] <= 2;
+                    node[0] <= 1;
+                    node[1] <= 2;
+                    node[2] <= 1;
+                    node[3] <= 2;
+                    node[4] <= 1;
                     node[5] <= 0;
                     node[6] <= 0;
                     node[7] <= 1;
@@ -216,6 +222,10 @@ module RayProcessor #(
                 RAY_TRAVERSE_OCTANT_NO: begin // 3
 
                     octant_no <= 4 * ray_pos_z[depth] + 2 * ray_pos_y[depth] + 1 * ray_pos_x[depth];
+                    z <= ray_pos_z[depth];
+                    y <= ray_pos_y[depth];
+                    x <= ray_pos_x[COORD_BIT_LEN-1-depth];
+                    xprime <= ray_pos_x[1];
 
                 end
                 RAY_TRAVERSE_ADJUST: begin // 4
@@ -348,7 +358,7 @@ module RayProcessor #(
 
                 end
                 COLOUR_FORMAT: begin // 12
-
+                    in_state_12 <= 1;
                     case(received_material_id) 
                         1: begin
                             temp_r <= 255; 
@@ -409,7 +419,7 @@ module RayProcessor #(
                 if (valid_depth) begin
                     next_state = RAY_TRAVERSE_OCTANT_NO;
                 end else begin
-                    next_state = (received_material_id > 0) ? COLOUR_FORMAT : RAY_STEP_ADJUST_DIR_VEC;
+                    next_state = (received_material_id != 0) ? COLOUR_FORMAT : RAY_STEP_ADJUST_DIR_VEC;
                 end
             end
             RAY_STEP_ADJUST_DIR_VEC: begin // 6
