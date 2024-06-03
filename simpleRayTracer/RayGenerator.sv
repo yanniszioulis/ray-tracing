@@ -16,7 +16,7 @@ SOME BUGS/ OTHER POINTS:
 
 module RayGenerator
 (
-    input logic             clk, reset_n,
+    input logic             clk, reset_n, ready,
     input logic [7:0]       camera_pos_x, camera_pos_y, camera_pos_z,
     input logic [7:0]       camera_dir_x, camera_dir_y, camera_dir_z,
     input logic [12:0]      image_width, image_height,
@@ -67,22 +67,31 @@ module RayGenerator
                     ray_dir_z <= 0;
                 end 
                 CALCULATE_MU: begin
+                    /* verilator lint_off WIDTH */
                     mu <= distance - camera_pos_z;
+                    /* verilator lint_on WIDTH */
                 end
                 CALCULATE_IMAGE: begin
+                    /* verilator lint_off WIDTH */
                     image_center_x <= camera_pos_x + mu * camera_dir_x;
                     image_center_y <= camera_pos_y + mu * camera_dir_y;
+                    /* verilator lint_on WIDTH */
                 end
                 GENERATE_RAYS: begin
-                    if (loop_index <= image_height * image_width) begin
-                        pixel_x <= image_center_x + (loop_index % image_width) - (image_width / 2);
-                        pixel_y <= image_center_y - (loop_index / image_width) + (image_height / 2) - 1;
+                    if (ready) begin
+                        if (loop_index <= image_height * image_width) begin
+                            /* verilator lint_off WIDTH */
+                            pixel_x <= image_center_x + (loop_index % image_width) - (image_width / 2);
+                            pixel_y <= image_center_y - (loop_index / image_width) + (image_height / 2) - 1;
+                            
 
-                        ray_dir_x <= pixel_x - camera_pos_x;
-                        ray_dir_y <= pixel_y - camera_pos_y;
-                        ray_dir_z <= distance;
+                            ray_dir_x <= pixel_x - camera_pos_x;
+                            ray_dir_y <= pixel_y - camera_pos_y;
+                            ray_dir_z <= distance;
+                            /* verilator lint_on WIDTH */
 
-                        loop_index <= loop_index + 1;
+                            loop_index <= loop_index + 1;
+                        end
                     end
                 end
             endcase

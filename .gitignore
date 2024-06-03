@@ -5,3 +5,4 @@ simpleRayTracer/obj_dir
 simpleRayTracer/*.vcd
 
 *.txt
+*.ppm
