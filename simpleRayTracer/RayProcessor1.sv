@@ -366,7 +366,7 @@ module RayProcessor1 #(
                 end
             end
             RAY_STEP_ADJUST_DIR_VEC: begin // 5
-                next_state = dir_big_enough ? RAY_STEP_CHECK_PROXIMITY : RAY_STEP_ADJUST_DIR_VEC;
+                next_state = dir_big_enough ? RAY_TEMP_STEP : RAY_STEP_ADJUST_DIR_VEC;
             end
             RAY_TEMP_STEP: begin // 6
                 next_state = RAY_STEP_CHECK_PROXIMITY;
