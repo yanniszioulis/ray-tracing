@@ -49,9 +49,9 @@ module RayProcessor #(
     logic [31:0]                reg_ray_dir_z;
 
     // Ray setup.
-    logic [COORD_BIT_LEN:0]   ray_pos_x;
-    logic [COORD_BIT_LEN:0]   ray_pos_y;
-    logic [COORD_BIT_LEN:0]   ray_pos_z;
+    logic [COORD_BIT_LEN-1:0]   ray_pos_x;
+    logic [COORD_BIT_LEN-1:0]   ray_pos_y;
+    logic [COORD_BIT_LEN-1:0]   ray_pos_z;
 
     // Octree setup
     // logic [31:0]                root;
@@ -93,13 +93,15 @@ module RayProcessor #(
     logic [2:0]                 y;
     logic [2:0]                 x;
     logic [2:0]                 xprime;
+    int                         index;
+    logic [2:0]                 octant_no_test;
 
     typedef enum logic [3:0] { 
         INITIALISE,                     // 0
         IDLE,                           // 1
         RAY_TRAVERSE_INITIALISE,        // 2
         RAY_TRAVERSE_OCTANT_NO,         // 3
-        RAY_TRAVERSE_ADJUST,            // 4
+        RAY_TRAVERSE_ADJUST,            // 4                           
         RAY_TRAVERSE_UPDATE,            // 5
         RAY_STEP_ADJUST_DIR_VEC,        // 6
         RAY_STEP_CHECK_PROXIMITY,       // 7
@@ -171,6 +173,10 @@ module RayProcessor #(
                     octant_no <= 0;
                     dir_big_enough <= 0;
                     received_material_id <= 0;
+                    x <= 0;
+                    y <= 0;
+                    z <= 0;
+                    index <= 0;
                     /* verilator lint_on WIDTH */
 
                     // TODO: this array initialisation needs to move - shouldn't be repeated for each ray.
@@ -183,7 +189,7 @@ module RayProcessor #(
                     // octree[6] <= 0;
                     // octree[7] <= 1;
 
-                    node[0] <= 1;
+                    node[0] <= 2;
                     node[1] <= 2;
                     node[2] <= 1;
                     node[3] <= 2;
@@ -217,29 +223,31 @@ module RayProcessor #(
                 RAY_TRAVERSE_INITIALISE: begin // 2
                     
                     depth <= 0;
+                    index <= COORD_BIT_LEN-1-depth;
 
                 end
                 RAY_TRAVERSE_OCTANT_NO: begin // 3
 
-                    octant_no <= 4 * ray_pos_z[depth] + 2 * ray_pos_y[depth] + 1 * ray_pos_x[depth];
-                    z <= ray_pos_z[depth];
-                    y <= ray_pos_y[depth];
-                    x <= ray_pos_x[COORD_BIT_LEN-1-depth];
-                    xprime <= ray_pos_x[1];
+                    octant_no <= 4 * ray_pos_z[index] + 2 * ray_pos_y[index] + 1 * ray_pos_x[index];
+                    z <= ray_pos_z[index];
+                    y <= ray_pos_y[index];
+                    x <= ray_pos_x[index];
+                    xprime <= ray_pos_x[6];
 
                 end
                 RAY_TRAVERSE_ADJUST: begin // 4
 
                     depth <= depth + 1;
                     oct_size <= oct_size >> 1; 
+                    index <= COORD_BIT_LEN - depth; 
 
                 end
                 RAY_TRAVERSE_UPDATE: begin // 5
 
                     /* verilator lint_off WIDTH */
-                    aabb_min_x <= aabb_min_x + oct_size * ray_pos_x[depth-1];
-                    aabb_min_y <= aabb_min_y + oct_size * ray_pos_y[depth-1];
-                    aabb_min_z <= aabb_min_z + oct_size * ray_pos_z[depth-1];
+                    aabb_min_x <= aabb_min_x + oct_size * ray_pos_x[index];
+                    aabb_min_y <= aabb_min_y + oct_size * ray_pos_y[index];
+                    aabb_min_z <= aabb_min_z + oct_size * ray_pos_z[index];
 
                     aabb_max_x <= aabb_min_x + oct_size - 1;
                     aabb_max_y <= aabb_min_y + oct_size - 1;
