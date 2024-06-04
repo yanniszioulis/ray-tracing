@@ -35,7 +35,7 @@ module RayTracingUnit
     );
 
 
-    RayProcessor ray_processor
+    RayProcessor1 ray_processor
     (
         .clk(clk),
         .reset_n(reset),
