@@ -8,7 +8,7 @@ module RayProcessor #(
 )(
     input logic                 clk, reset_n,
     input logic [31:0]          ray_dir_x, ray_dir_y, ray_dir_z,
-    input logic [7:0]           camera_pos_x, camera_pos_y, camera_pos_z,
+    input logic [COORD_BIT_LEN:0]           camera_pos_x, camera_pos_y, camera_pos_z,
     input logic [12:0]          image_width, image_height,
     output logic [7:0]          r, g, b,
     output logic                ready,                      // signal to go back to ray gen to tell it to generate new ray
@@ -195,9 +195,9 @@ module RayProcessor #(
                 node[1] <= 0;
                 node[2] <= 0;
                 node[3] <= 0;
-                node[4] <= 2;
-                node[5] <= 0;
-                node[6] <= 1;
+                node[4] <= 0;
+                node[5] <= 1;
+                node[6] <= 0;
                 node[7] <= 0;
 
 
@@ -244,9 +244,13 @@ module RayProcessor #(
                 // oct_size <= oct_size >> 1; 
                 //index <= COORD_BIT_LEN - depth - 1; // -1? this wont get updated to the value you want 
                 received_material_id <= node[octant_no]; // TODO (hard coded for now) this will change - will proably be the address of the first sub child + octant_no
-                aabb_min_x <= aabb_min_x + oct_size * ray_pos_x[index];
-                aabb_min_y <= aabb_min_y + oct_size * ray_pos_y[index];
-                aabb_min_z <= aabb_min_z + oct_size * ray_pos_z[index];
+                // aabb_min_x <= aabb_min_x + oct_size * ray_pos_x[index];
+                // aabb_min_y <= aabb_min_y + oct_size * ray_pos_y[index];
+                // aabb_min_z <= aabb_min_z + oct_size * ray_pos_z[index];
+
+                aabb_min_x <= octant_no[0] * oct_size;
+                aabb_min_y <= octant_no[1] * oct_size;
+                aabb_min_z <= octant_no[2] * oct_size;
 
             end
             RAY_TRAVERSE_UPDATE: begin // 5
@@ -309,10 +313,14 @@ module RayProcessor #(
                 temp_ray_pos_y <= ray_pos_y + reg_ray_dir_y;
                 temp_ray_pos_z <= ray_pos_z + reg_ray_dir_z;
                 /* verilator lint_on WIDTH */
-                
+
+                within_world_x <= (temp_ray_pos_x + 1<= world_max_x) ? 1 : 0;
+                within_world_y <= (temp_ray_pos_y + 1<= world_max_y) ? 1 : 0;
+                within_world_z <= (temp_ray_pos_z + 1<= world_max_z) ? 1 : 0;
 
             end
             RAY_STEP_POSITION_CALC: begin // 9
+                within_world <= within_world_x && within_world_y && within_world_z;
 
                 within_x <= (temp_ray_pos_x >= aabb_min_x && temp_ray_pos_x <= aabb_max_x) ? 1 : 0;
                 within_y <= (temp_ray_pos_y >= aabb_min_y && temp_ray_pos_y <= aabb_max_y) ? 1 : 0;
@@ -458,7 +466,7 @@ module RayProcessor #(
                 next_state = RAY_STEP_POSITION_CALC;
             end
             RAY_STEP_POSITION_CALC: begin // 9
-                next_state = RAY_STEP_CHECK;
+                next_state = within_world ? RAY_STEP_CHECK : RAY_OUT_OF_BOUND;
             end
             RAY_STEP_CHECK: begin // 10
                 next_state = RAY_STEP_CHECK_PROXIMITY;

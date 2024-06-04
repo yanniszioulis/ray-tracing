@@ -1,7 +1,7 @@
 module RayTracingUnit
 (
     input logic                 clk, reset,
-    input logic [7:0]           cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ,
+    input logic [10:0]           cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ,
     input logic [12:0]          imageWidth, imageHeight,
     input logic [31:0]          cameraDistance,
     output logic                validRead,
@@ -35,7 +35,7 @@ module RayTracingUnit
     );
 
 
-    RayProcessor1 ray_processor
+    RayProcessor ray_processor
     (
         .clk(clk),
         .reset_n(reset),
