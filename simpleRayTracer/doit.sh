@@ -13,3 +13,7 @@ make -j -C obj_dir/ -f VRayTracingUnit.mk VRayTracingUnit
 
 # run executable simulation
 obj_dir/VRayTracingUnit
+
+python3 convert.py
+
+echo "Shell script executed successfully."

@@ -31,9 +31,6 @@ module RayProcessor #(
     // World setup
     logic [COORD_BIT_LEN:0]     world_size;
     logic [COORD_BIT_LEN:0]     oct_size;
-    // logic [COORD_BIT_LEN-1:0]   world_min_x;
-    // logic [COORD_BIT_LEN-1:0]   world_min_y;
-    // logic [COORD_BIT_LEN-1:0]   world_min_z;
     logic [COORD_BIT_LEN-1:0]   world_max_x;
     logic [COORD_BIT_LEN-1:0]   world_max_y;
     logic [COORD_BIT_LEN-1:0]   world_max_z;
@@ -44,9 +41,13 @@ module RayProcessor #(
     logic [COORD_BIT_LEN-1:0]   aabb_max_y;
     logic [COORD_BIT_LEN-1:0]   aabb_max_z; 
 
-    reg signed [31:0]                reg_ray_dir_x;
-    reg signed [31:0]                reg_ray_dir_y;
-    reg signed [31:0]                reg_ray_dir_z;
+    reg signed [31:0]           reg_ray_dir_x;
+    reg signed [31:0]           reg_ray_dir_y;
+    reg signed [31:0]           reg_ray_dir_z;
+
+    reg signed [31:0]           curr_ray_dir_x;  
+    reg signed [31:0]           curr_ray_dir_y;
+    reg signed [31:0]           curr_ray_dir_z;      
 
     // Ray setup.
     logic [COORD_BIT_LEN-1:0]   ray_pos_x;
@@ -54,9 +55,7 @@ module RayProcessor #(
     logic [COORD_BIT_LEN-1:0]   ray_pos_z;
 
     // Octree setup
-    // logic [31:0]                root;
     logic [31:0]                node [0:7];
-    // logic [31:0]                octree [0:7];
 
     // Traversal intermediate logic
     int                depth;
@@ -143,7 +142,7 @@ module RayProcessor #(
                 valid_data_out <= 0;
                 valid_depth <= 0;
                 world_size <= 2**COORD_BIT_LEN;
-                oct_size <= 2**(COORD_BIT_LEN-1);
+                oct_size <= 2**(COORD_BIT_LEN-1); // hard coded
 
                 /* verilator lint_off WIDTH */
                 world_max_x <= world_size - 1;
@@ -171,8 +170,9 @@ module RayProcessor #(
                 temp_just_outside_x <= 0;
                 temp_just_outside_y <= 0;
                 temp_just_outside_z <= 0;
+
                 just_outside_x <= 0;
-                just_outside_y <= 0;
+                just_outside_y <= 0; // we dont use these i think
                 just_outside_z <= 0;
 
                 just_outside_AABB <= 0; 
@@ -180,21 +180,8 @@ module RayProcessor #(
                 //octant_no <= 0;
                 dir_big_enough <= 0;
                 received_material_id <= 0;
-                x <= 0;
-                y <= 0;
-                z <= 0;
                 index <= 0;
                 /* verilator lint_on WIDTH */
-
-                // TODO: this array initialisation needs to move - shouldn't be repeated for each ray.
-                // octree[0] <= 0;
-                // octree[1] <= 0;
-                // octree[2] <= 0;
-                // octree[3] <= 0;
-                // octree[4] <= 2;
-                // octree[5] <= 0;
-                // octree[6] <= 0;
-                // octree[7] <= 0;
 
                 node[0] <= 0;
                 node[1] <= 0;
@@ -203,7 +190,7 @@ module RayProcessor #(
                 node[4] <= 0;
                 node[5] <= 2;
                 node[6] <= 0;
-                node[7] <= 0;
+                node[7] <= 1;
 
 
             end
@@ -222,41 +209,35 @@ module RayProcessor #(
                     ready <= 0;
                 end
 
+                reg_ray_dir_x <= ray_dir_x;
+                reg_ray_dir_y <= ray_dir_y;
+                reg_ray_dir_z <= ray_dir_z;
+
+                curr_ray_dir_x <= ray_dir_x;
+                curr_ray_dir_y <= ray_dir_y;
+                curr_ray_dir_z <= ray_dir_z;
 
             end
             RAY_TRAVERSE_INITIALISE: begin // 2
                 
-                reg_ray_dir_x <= ray_dir_x;
-                reg_ray_dir_y <= ray_dir_y;
-                reg_ray_dir_z <= ray_dir_z;
+                reg_ray_dir_x <= curr_ray_dir_x;
+                reg_ray_dir_y <= curr_ray_dir_y;
+                reg_ray_dir_z <= curr_ray_dir_z;
+
                 depth <= 0;
                 index <= COORD_BIT_LEN-1-depth; // check for depth updates in seperate module
 
             end
             RAY_TRAVERSE_OCTANT_NO: begin // 3
 
-                // octant_no <= 4 * ray_pos_z[index] + 2 * ray_pos_y[index] + 1 * ray_pos_x[index];
                 octant_no <= {ray_pos_z[index], ray_pos_y[index], ray_pos_x[index]};
-                z <= ray_pos_z[index];
-                y <= ray_pos_y[index];
-                x <= ray_pos_x[index];
-                xprime <= ray_pos_x[6]; // WHATS THE POINT OF XPRIME?
-                // reg_ray_dir_x <= ray_dir_x;
-                // reg_ray_dir_y <= ray_dir_y;
-                // reg_ray_dir_z <= ray_dir_z;
                 dir_big_enough <= 0;
                 in_range <= 0;
 
             end
             RAY_TRAVERSE_ADJUST: begin // 4 - DETERMINING MIN AABB COORDINATES
 
-                // depth <= depth + 1;
-                // oct_size <= oct_size >> 1; 
-                //index <= COORD_BIT_LEN - depth - 1; // -1? this wont get updated to the value you want 
                 received_material_id <= node[octant_no]; // TODO (hard coded for now) this will change - will proably be the address of the first sub child + octant_no
-                // aabb_min_x <= aabb_min_x + oct_size * ray_pos_x[index];
-                // aabb_min_y <= aabb_min_y + oct_size * ray_pos_y[index];
-                // aabb_min_z <= aabb_min_z + oct_size * ray_pos_z[index];
 
                 aabb_min_x <= octant_no[0] * oct_size;
                 aabb_min_y <= octant_no[1] * oct_size;
@@ -274,6 +255,8 @@ module RayProcessor #(
                 /* verilator lint_on WIDTH */
 
                 valid_depth <= (depth < COORD_BIT_LEN) ? 1 : 0;
+
+                // calculate magnitude 
 
                 magnitude_squared <= reg_ray_dir_x*reg_ray_dir_x + reg_ray_dir_y*reg_ray_dir_y + reg_ray_dir_z*reg_ray_dir_z;
                 oct_size_squared <= oct_size * oct_size;
@@ -321,32 +304,6 @@ module RayProcessor #(
                 within_world <= within_world_x && within_world_y && within_world_z;
                 just_outside_AABB <= (temp_just_outside_x&&temp_just_outside_y&&temp_just_outside_z)||(temp_just_outside_x&&temp_just_outside_y&&within_z)||(temp_just_outside_x&&within_y&&temp_just_outside_z)||(temp_just_outside_x&&within_y&&within_z)||(within_x&&temp_just_outside_y&&temp_just_outside_z)||(within_x&&within_y&&temp_just_outside_z)||(within_x&&temp_just_outside_y&&within_z);
                 in_range <= ((within_x && within_y && within_z) ||(temp_just_outside_x&&temp_just_outside_y&&temp_just_outside_z)||(temp_just_outside_x&&temp_just_outside_y&&within_z)||(temp_just_outside_x&&within_y&&temp_just_outside_z)||(temp_just_outside_x&&within_y&&within_z)||(within_x&&temp_just_outside_y&&temp_just_outside_z)||(within_x&&within_y&&temp_just_outside_z)||(within_x&&temp_just_outside_y&&within_z));
-                // within_x <= (temp_ray_pos_x >= aabb_min_x && temp_ray_pos_x <= aabb_max_x) ? 1 : 0;
-                // within_y <= (temp_ray_pos_y >= aabb_min_y && temp_ray_pos_y <= aabb_max_y) ? 1 : 0;
-                // within_z <= (temp_ray_pos_z >= aabb_min_z && temp_ray_pos_z <= aabb_max_z) ? 1 : 0;
-
-                // //within_AABB <= within_x && within_y && within_z;
-
-
-                // if (temp_ray_pos_x == aabb_min_x - 1 || temp_ray_pos_x == aabb_max_x + 1) begin
-                //     temp_just_outside_x <= 1;
-                // end else begin
-                //     temp_just_outside_x <= 0;
-                // end
-
-                // if (temp_ray_pos_y == aabb_min_y - 1 || temp_ray_pos_y == aabb_max_y + 1) begin
-                //     temp_just_outside_y <= 1;
-                // end else begin
-                //     temp_just_outside_y <= 0;
-                // end
-
-                // if (temp_ray_pos_z == aabb_min_z - 1 || temp_ray_pos_z == aabb_max_z + 1) begin
-                //     temp_just_outside_z <= 1;
-                // end else begin
-                //     temp_just_outside_z <= 0;
-                // end
-
-                //temp_just_outside_AABB <= temp_just_outside_x && temp_just_outside_y && temp_just_outside_z;
             
             end
             STALL: begin //10
@@ -355,23 +312,12 @@ module RayProcessor #(
 
 
                 if (in_range) begin
-                    // update <= within_x && just_outside_y && within_z;
-                    // ray_pos_x <= (temp_ray_pos_x >= aabb_max_x) ? aabb_max_x : temp_ray_pos_x;
-                    // if (temp_ray_pos_x >= aabb_max_x) begin
-                    //     hold <= aabb_max_x + 1;
-                    //     ray_pos_x <= temp_ray_pos_x;
-                    // end else begin
-                    //     ray_pos_x <= temp_ray_pos_x;
-                    // end
-                    // ray_pos_y <= (temp_ray_pos_y >= aabb_max_y) ? aabb_max_y : temp_ray_pos_y;
-                    // ray_pos_z <= (temp_ray_pos_z >= aabb_max_z) ? aabb_max_z : temp_ray_pos_z;
                     ray_pos_x <= temp_ray_pos_x;
                     ray_pos_y <= temp_ray_pos_y;
                     ray_pos_z <= temp_ray_pos_z;
                 end
 
 
-                // reg_ray_dir_x <= (reg_ray_dir_x == 1) ? 1 : reg_ray_dir_x >>> 1;
                 reg_ray_dir_x <= (reg_ray_dir_x == 1) ? 1 : reg_ray_dir_x >>> 1;
                 reg_ray_dir_y <= (reg_ray_dir_y == 1) ? 1 : reg_ray_dir_y >>> 1;
                 reg_ray_dir_z <= (reg_ray_dir_z == 1) ? 1 : reg_ray_dir_z >>> 1;
@@ -393,7 +339,6 @@ module RayProcessor #(
 
             end
             COLOUR_FORMAT: begin // 13
-                // in_state_12 <= 1;
                 case(received_material_id) 
                     1: begin
                         temp_r <= 255; 
@@ -451,11 +396,6 @@ module RayProcessor #(
                 next_state = RAY_TRAVERSE_UPDATE;
             end
             RAY_TRAVERSE_UPDATE: begin // 5
-                // if (valid_depth) begin
-                //     next_state = RAY_TRAVERSE_OCTANT_NO;
-                // end else begin
-                //     next_state = (received_material_id != 0) ? COLOUR_FORMAT : RAY_STEP_ADJUST_DIR_VEC;
-                // end
 
                 if (received_material_id != 0) begin
                     next_state = COLOUR_FORMAT;
@@ -474,7 +414,6 @@ module RayProcessor #(
                 next_state = RAY_STEP_POSITION_CALC;
             end
             RAY_STEP_POSITION_CALC: begin // 9
-                // next_state = within_world ? RAY_STEP_CHECK : RAY_OUT_OF_BOUND;
                 next_state = STALL;
             end
             STALL: begin //10
