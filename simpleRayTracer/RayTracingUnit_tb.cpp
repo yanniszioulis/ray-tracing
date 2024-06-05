@@ -35,7 +35,7 @@ int main(int argc, char** argv, char** env) {
     top->cameraDistance = 230; // Example distance
 
     // Open a file to write the output in PPM format
-    std::ofstream ppmfile("output.ppm");
+    std::ofstream ppmfile("output1.ppm");
 
     // Check if file is open
     if (!ppmfile.is_open()) {

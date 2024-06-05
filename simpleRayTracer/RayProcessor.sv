@@ -306,7 +306,7 @@ module RayProcessor #(
 
                 // if(reg_ray_dir_x == 1) begin
                 //     underflow_x <= 1;
-                //     if(underflow_x == 0 || (reg_ray_dir_y == 0 && reg_ray_dir_z == 0)) begin
+                //     if(underflow_x == 0 || (reg_ray_dir_y == 0 || reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1) ) begin
                 //         reg_ray_dir_x <= 1;
                 //     end
                 // end
@@ -316,7 +316,7 @@ module RayProcessor #(
 
                 // if(reg_ray_dir_y == 1) begin
                 //     underflow_y <= 1;
-                //     if(underflow_y == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_z == 0)) begin
+                //     if(underflow_y == 0 || (reg_ray_dir_x == 0 || reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
                 //         reg_ray_dir_y <= 1;
                 //     end
                 // end
@@ -326,7 +326,7 @@ module RayProcessor #(
 
                 // if(reg_ray_dir_z == 1) begin
                 //     underflow_z <= 1;
-                //     if(underflow_z == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_y == 0)) begin
+                //     if(underflow_z == 0 || (reg_ray_dir_x == 0 || reg_ray_dir_y == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
                 //         reg_ray_dir_z <= 1;
                 //     end
                 // end
