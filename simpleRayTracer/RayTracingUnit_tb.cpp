@@ -23,11 +23,11 @@ int main(int argc, char** argv, char** env) {
     int image_height = 256;
     top->clk = 0;
     top->reset = 1;
-    top->cameraPosX = 512;
-    top->cameraPosY = 512;
+    top->cameraPosX = 480;
+    top->cameraPosY = 340;
     top->cameraPosZ = 0;
-    top->cameraDirX = 0;
-    top->cameraDirY = 0;
+    top->cameraDirX = 30;
+    top->cameraDirY = 10;
     top->cameraDirZ = 1; // Assuming the camera is pointing in the positive z direction
     top->imageWidth = image_width;
     top->imageHeight = image_height;
@@ -46,7 +46,7 @@ int main(int argc, char** argv, char** env) {
     ppmfile << "P3\n" << image_width << " " << image_height << "\n255\n";
 
     // Simulate for a number of cycles
-    for (int i = 0; i <  3000 * (image_height * image_width) + 15; i++) {
+    for (int i = 0; i < 210 * (image_height * image_width); i++) {
         // Toggle clock
         for (int clk = 0; clk<2; clk++) {
             tfp->dump(2*i+clk);
