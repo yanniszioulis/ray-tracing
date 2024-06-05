@@ -6,24 +6,21 @@ This module will take as input the direction vector of a ray and position of the
 module RayProcessor #(
     parameter COORD_BIT_LEN = 10
 )(
-    input logic                 clk, reset_n,
-    input logic [31:0]          ray_dir_x, ray_dir_y, ray_dir_z,
+    input logic                             clk, reset_n,
+    input logic [31:0]                      ray_dir_x, ray_dir_y, ray_dir_z,
     input logic [COORD_BIT_LEN:0]           camera_pos_x, camera_pos_y, camera_pos_z,
-    input logic [12:0]          image_width, image_height,
-    output logic [7:0]          r, g, b,
-    output logic                ready,                      // signal to go back to ray gen to tell it to generate new ray
-    output logic                valid_data_out,              // signal to next block/ buffer to read output from ray processor
+    input logic [12:0]                      image_width, image_height,
+    output logic [7:0]                      r, g, b,
+    output logic                            ready,                      // signal to go back to ray gen to tell it to generate new ray
+    output logic                            valid_data_out              // signal to next block/ buffer to read output from ray processor
 
-    output logic [3:0]          curr_state
 );
 
     // Logic for state transitions:
     logic                       valid;                      // whether an input vector is a valid direction vector
-    logic                       valid_depth;                // condition for octree traversal - when to break out of loop
     logic [1:0]                 received_material_id;       // check what material we have
     logic                       dir_big_enough;             // logic to check whether the direction vector is big enough for the current octant
     logic                       just_outside_AABB;          // logic to see whether we are just outside an AABB
-    logic                       temp_just_outside_AABB;
     logic                       within_world;               // check if the ray is in the given envrionment
     
     logic [31:0]                loop_index;                 // keep track of loop count
@@ -45,6 +42,10 @@ module RayProcessor #(
     reg signed [31:0]           reg_ray_dir_y;
     reg signed [31:0]           reg_ray_dir_z;
 
+    reg                         underflow_x;
+    reg                         underflow_y;
+    reg                         underflow_z;
+
     reg signed [31:0]           curr_ray_dir_x;  
     reg signed [31:0]           curr_ray_dir_y;
     reg signed [31:0]           curr_ray_dir_z;      
@@ -58,24 +59,23 @@ module RayProcessor #(
     logic [31:0]                node [0:7];
 
     // Traversal intermediate logic
-    int                depth;
+    int                         depth;
     logic [2:0]                 octant_no; 
 
     // Ray stepping intermediate logic            
+  
     logic                       just_outside_x;
     logic                       just_outside_y;
     logic                       just_outside_z;
-    logic                       temp_just_outside_x;
-    logic                       temp_just_outside_y;
-    logic                       temp_just_outside_z;
-    
+
+
     logic [COORD_BIT_LEN-1:0]   temp_ray_pos_x;
     logic [COORD_BIT_LEN-1:0]   temp_ray_pos_y;
     logic [COORD_BIT_LEN-1:0]   temp_ray_pos_z;
+
     logic                       within_x;
     logic                       within_y;
     logic                       within_z;
-    logic                       within_AABB;
     logic                       within_world_x;
     logic                       within_world_y;
     logic                       within_world_z;
@@ -83,17 +83,8 @@ module RayProcessor #(
     logic [7:0]                 temp_r;
     logic [7:0]                 temp_g;
     logic [7:0]                 temp_b;
-
-    logic                       update;
-    logic [31:0]                hold;
-
-    logic                       in_state_12;
-    logic [2:0]                 z;
-    logic [2:0]                 y;
-    logic [2:0]                 x;
-    logic [2:0]                 xprime;
+    
     int                         index;
-    logic [2:0]                 octant_no_test;
 
     logic [31:0]                magnitude_squared;
     logic [31:0]                oct_size_squared;
@@ -129,7 +120,6 @@ module RayProcessor #(
     end
 
     always_ff @(posedge clk or negedge reset_n) begin
-        curr_state <= state;
         if (!reset_n) begin
             state <= INITIALISE;
         end else begin
@@ -140,7 +130,6 @@ module RayProcessor #(
 
                 ready <= 0;
                 valid_data_out <= 0;
-                valid_depth <= 0;
                 world_size <= 2**COORD_BIT_LEN;
                 oct_size <= 2**(COORD_BIT_LEN-1); // hard coded
 
@@ -167,13 +156,11 @@ module RayProcessor #(
                 temp_ray_pos_y <= 0;
                 temp_ray_pos_z <= 0;
 
-                temp_just_outside_x <= 0;
-                temp_just_outside_y <= 0;
-                temp_just_outside_z <= 0;
-
                 just_outside_x <= 0;
-                just_outside_y <= 0; // we dont use these i think
+                just_outside_y <= 0;
                 just_outside_z <= 0;
+
+               
 
                 just_outside_AABB <= 0; 
                 within_world <= 1;
@@ -254,7 +241,6 @@ module RayProcessor #(
 
                 /* verilator lint_on WIDTH */
 
-                valid_depth <= (depth < COORD_BIT_LEN) ? 1 : 0;
 
                 // calculate magnitude 
 
@@ -280,8 +266,6 @@ module RayProcessor #(
                 temp_ray_pos_y <= ray_pos_y + reg_ray_dir_y;
                 temp_ray_pos_z <= ray_pos_z + reg_ray_dir_z;
 
-                // update <= 0;
-
             end
             RAY_STEP: begin // 8
 
@@ -289,9 +273,9 @@ module RayProcessor #(
                 within_y <= (temp_ray_pos_y >= aabb_min_y && temp_ray_pos_y <= aabb_max_y) ? 1 : 0;
                 within_z <= (temp_ray_pos_z >= aabb_min_z && temp_ray_pos_z <= aabb_max_z) ? 1 : 0;
                 
-                temp_just_outside_x <= (temp_ray_pos_x == aabb_min_x - 1 || temp_ray_pos_x == aabb_max_x + 1) ? 1 : 0;
-                temp_just_outside_y <= (temp_ray_pos_y == aabb_min_y - 1 || temp_ray_pos_y == aabb_max_y + 1) ? 1 : 0;
-                temp_just_outside_z <= (temp_ray_pos_z == aabb_min_z - 1 || temp_ray_pos_z == aabb_max_z + 1) ? 1 : 0;
+                just_outside_x <= (temp_ray_pos_x == aabb_min_x - 1 || temp_ray_pos_x == aabb_max_x + 1) ? 1 : 0;
+                just_outside_y <= (temp_ray_pos_y == aabb_min_y - 1 || temp_ray_pos_y == aabb_max_y + 1) ? 1 : 0;
+                just_outside_z <= (temp_ray_pos_z == aabb_min_z - 1 || temp_ray_pos_z == aabb_max_z + 1) ? 1 : 0;
 
                 within_world_x <= (temp_ray_pos_x + 1<= world_max_x) ? 1 : 0;
                 within_world_y <= (temp_ray_pos_y + 1<= world_max_y) ? 1 : 0;
@@ -302,8 +286,8 @@ module RayProcessor #(
             end
             RAY_STEP_POSITION_CALC: begin // 9
                 within_world <= within_world_x && within_world_y && within_world_z;
-                just_outside_AABB <= (temp_just_outside_x&&temp_just_outside_y&&temp_just_outside_z)||(temp_just_outside_x&&temp_just_outside_y&&within_z)||(temp_just_outside_x&&within_y&&temp_just_outside_z)||(temp_just_outside_x&&within_y&&within_z)||(within_x&&temp_just_outside_y&&temp_just_outside_z)||(within_x&&within_y&&temp_just_outside_z)||(within_x&&temp_just_outside_y&&within_z);
-                in_range <= ((within_x && within_y && within_z) ||(temp_just_outside_x&&temp_just_outside_y&&temp_just_outside_z)||(temp_just_outside_x&&temp_just_outside_y&&within_z)||(temp_just_outside_x&&within_y&&temp_just_outside_z)||(temp_just_outside_x&&within_y&&within_z)||(within_x&&temp_just_outside_y&&temp_just_outside_z)||(within_x&&within_y&&temp_just_outside_z)||(within_x&&temp_just_outside_y&&within_z));
+                just_outside_AABB <= (just_outside_x&&just_outside_y&&just_outside_z)||(just_outside_x&&just_outside_y&&within_z)||(just_outside_x&&within_y&&just_outside_z)||(just_outside_x&&within_y&&within_z)||(within_x&&just_outside_y&&just_outside_z)||(within_x&&within_y&&just_outside_z)||(within_x&&just_outside_y&&within_z);
+                in_range <= ((within_x && within_y && within_z) ||(just_outside_x&&just_outside_y&&just_outside_z)||(just_outside_x&&just_outside_y&&within_z)||(just_outside_x&&within_y&&just_outside_z)||(just_outside_x&&within_y&&within_z)||(within_x&&just_outside_y&&just_outside_z)||(within_x&&within_y&&just_outside_z)||(within_x&&just_outside_y&&within_z));
             
             end
             STALL: begin //10
@@ -318,11 +302,44 @@ module RayProcessor #(
                 end
 
 
+                // Block below: for more accurate direction vector.
+
+                // if(reg_ray_dir_x == 1) begin
+                //     underflow_x <= 1;
+                //     if(underflow_x == 0 || (reg_ray_dir_y == 0 && reg_ray_dir_z == 0)) begin
+                //         reg_ray_dir_x <= 1;
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_x <= reg_ray_dir_x >>> 1;
+                // end
+
+                // if(reg_ray_dir_y == 1) begin
+                //     underflow_y <= 1;
+                //     if(underflow_y == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_z == 0)) begin
+                //         reg_ray_dir_y <= 1;
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_y <= reg_ray_dir_y >>> 1;
+                // end
+
+                // if(reg_ray_dir_z == 1) begin
+                //     underflow_z <= 1;
+                //     if(underflow_z == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_y == 0)) begin
+                //         reg_ray_dir_z <= 1;
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_z <= reg_ray_dir_z >>> 1;
+                // end
+                
+                
+                // Less accurate direction vector:
+
                 reg_ray_dir_x <= (reg_ray_dir_x == 1) ? 1 : reg_ray_dir_x >>> 1;
                 reg_ray_dir_y <= (reg_ray_dir_y == 1) ? 1 : reg_ray_dir_y >>> 1;
                 reg_ray_dir_z <= (reg_ray_dir_z == 1) ? 1 : reg_ray_dir_z >>> 1;
-
-                
                 
             end
             RAY_STEP_BRANCH: begin // 12

@@ -3,6 +3,7 @@
 #include "verilated_vcd_c.h"
 #include <iostream>
 #include <fstream>
+#include <chrono>
 
 int main(int argc, char** argv, char** env) {
     // Initialize Verilator
@@ -46,6 +47,7 @@ int main(int argc, char** argv, char** env) {
     ppmfile << "P3\n" << image_width << " " << image_height << "\n255\n";
 
     // Simulate for a number of cycles
+    auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 300 * (image_height * image_width); i++) {
         // Toggle clock
         for (int clk = 0; clk<2; clk++) {
@@ -73,6 +75,9 @@ int main(int argc, char** argv, char** env) {
 
     // Close the file
     ppmfile.close();
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "Time taken: " << duration.count() << " seconds" << std::endl;
 
     // Final model cleanup
     top->final();

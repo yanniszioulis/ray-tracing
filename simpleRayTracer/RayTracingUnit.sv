@@ -5,9 +5,8 @@ module RayTracingUnit
     input logic [12:0]          imageWidth, imageHeight,
     input logic [31:0]          cameraDistance,
     output logic                validRead,
-    output logic [7:0]          red, green, blue,
+    output logic [7:0]          red, green, blue
 
-    output logic [3:0]          curr_state
 );
 
     logic                       Ready;
@@ -51,8 +50,7 @@ module RayTracingUnit
         .g(green),
         .b(blue),
         .ready(Ready),
-        .valid_data_out(validRead),
-        .curr_state(curr_state)
+        .valid_data_out(validRead)
     );
 
 endmodule
