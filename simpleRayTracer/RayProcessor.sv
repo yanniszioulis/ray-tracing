@@ -387,7 +387,7 @@ module RayProcessor #(
                 ready_internal <= 1;
                 loop_index <= loop_index + 1; 
 
-                if (loop_index  % image_width == 0) begin
+                if ((loop_index + 1 ) % image_width == 0) begin
                     last_x <= 1;
                     count <= count + 1;
                 end else begin
