@@ -123,11 +123,11 @@ module RayProcessor #(
     end
 
     always_ff @(posedge clk or negedge reset_n) begin
-        if (!reset_n) begin
-            state <= INITIALISE;
-        end else begin
-            state <= next_state;
-        end
+        // if (!reset_n) begin
+        //     state <= INITIALISE;
+        // end else begin
+        //     state <= next_state;
+        // end
         case (state)
             INITIALISE: begin // 0
 
