@@ -93,7 +93,8 @@ module RayProcessor #(
     logic                       in_range;
     logic [31:0]                count;
 
-    typedef enum logic [3:0] { 
+    typedef enum logic [4:0] { 
+        NEW_FRAME,
         INITIALISE,                     // 0
         IDLE,                           // 1
         RAY_TRAVERSE_INITIALISE,        // 2
@@ -125,6 +126,9 @@ module RayProcessor #(
     always_ff @(posedge clk) begin
 
         case (state)
+            NEW_FRAME: begin
+                loop_index <= 0;
+            end
             INITIALISE: begin // 0
 
                 ready_internal <= 0;
@@ -202,6 +206,12 @@ module RayProcessor #(
                 curr_ray_dir_x <= ray_dir_x;
                 curr_ray_dir_y <= ray_dir_y;
                 curr_ray_dir_z <= ray_dir_z;
+
+                if (loop_index == 0) begin
+                    sof <= 1;
+                end else begin
+                    sof <= 0;
+                end
 
             end
             RAY_TRAVERSE_INITIALISE: begin // 2
@@ -387,17 +397,11 @@ module RayProcessor #(
                 ready_internal <= 1;
                 loop_index <= loop_index + 1; 
 
-                if ((loop_index + 1 ) % image_width == 0) begin
+                if ((loop_index + 2 ) % image_width == 0) begin
                     last_x <= 1;
                     count <= count + 1;
                 end else begin
                     last_x <= 0;
-                end
-
-                if (loop_index == 0) begin
-                    sof <= 1;
-                end else begin
-                    sof <= 0;
                 end
 
             end
@@ -409,6 +413,9 @@ module RayProcessor #(
     always_comb begin
         next_state = state;
         case (state)
+            NEW_FRAME: begin 
+                next_state = INITIALISE;
+            end
             INITIALISE: begin // 0
                 next_state = IDLE;
             end
@@ -467,8 +474,8 @@ module RayProcessor #(
                 next_state = OUTPUT_COLOUR;
             end
             OUTPUT_COLOUR: begin // 15
-                if (loop_index > image_height * image_width) begin
-                    next_state = IDLE;
+                if (loop_index >= image_height * image_width - 1) begin
+                    next_state = NEW_FRAME;
                 end else begin
                     next_state = INITIALISE;
                 end
