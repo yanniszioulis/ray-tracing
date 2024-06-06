@@ -1,15 +1,16 @@
 module RayTracingUnit
 (
     input logic                 clk, reset,
-    input logic [10:0]           cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ,
+    input logic [10:0]          cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ,
     input logic [12:0]          imageWidth, imageHeight,
+    input logic                 ReadyExternal,
     input logic [31:0]          cameraDistance,
-    output logic                validRead,
+    output logic                validRead, lastX, Sof,
     output logic [7:0]          red, green, blue
 
 );
 
-    logic                       Ready;
+    logic                       ReadyInternal;
     logic [31:0]                dirX; 
     logic [31:0]                dirY; 
     logic [31:0]                dirZ;
@@ -18,7 +19,8 @@ module RayTracingUnit
     (
         .clk(clk),
         .reset_n(reset),
-        .ready(Ready),
+        .ready_internal(ReadyInternal),
+        .ready_external(ReadyExternal),
         .camera_pos_x(cameraPosX),
         .camera_pos_y(cameraPosY),
         .camera_pos_z(cameraPosZ),
@@ -49,8 +51,10 @@ module RayTracingUnit
         .r(red),
         .g(green),
         .b(blue),
-        .ready(Ready),
-        .valid_data_out(validRead)
+        .ready_internal(ReadyInternal),
+        .valid_data_out(validRead),
+        .last_x(lastX),
+        .sof(Sof)
     );
 
 endmodule

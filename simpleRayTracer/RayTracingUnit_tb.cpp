@@ -33,9 +33,10 @@ int main(int argc, char** argv, char** env) {
     top->imageWidth = image_width;
     top->imageHeight = image_height;
     top->cameraDistance = 230; // Example distance
+    top->ReadyExternal = 1;
 
     // Open a file to write the output in PPM format
-    std::ofstream ppmfile("output1.ppm");
+    std::ofstream ppmfile("output.ppm");
 
     // Check if file is open
     if (!ppmfile.is_open()) {

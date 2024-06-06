@@ -11,8 +11,10 @@ module RayProcessor #(
     input logic [COORD_BIT_LEN:0]           camera_pos_x, camera_pos_y, camera_pos_z,
     input logic [12:0]                      image_width, image_height,
     output logic [7:0]                      r, g, b,
-    output logic                            ready,                      // signal to go back to ray gen to tell it to generate new ray
-    output logic                            valid_data_out              // signal to next block/ buffer to read output from ray processor
+    output logic                            ready_internal,                      // signal to go back to ray gen to tell it to generate new ray
+    output logic                            valid_data_out,             // signal to next block/ buffer to read output from ray processor
+    output logic                            last_x,
+    output logic                            sof
 
 );
 
@@ -89,6 +91,7 @@ module RayProcessor #(
     logic [31:0]                magnitude_squared;
     logic [31:0]                oct_size_squared;
     logic                       in_range;
+    logic [31:0]                count;
 
     typedef enum logic [3:0] { 
         INITIALISE,                     // 0
@@ -128,7 +131,7 @@ module RayProcessor #(
         case (state)
             INITIALISE: begin // 0
 
-                ready <= 0;
+                ready_internal <= 0;
                 valid_data_out <= 0;
                 world_size <= 2**COORD_BIT_LEN;
                 oct_size <= 2**(COORD_BIT_LEN-1); // hard coded
@@ -187,13 +190,13 @@ module RayProcessor #(
 
                 if (ray_dir_z == 0) begin
                     valid <= 0;
-                    ready <= 1;
+                    ready_internal <= 1;
                 end else if (loop_index == 0 && ((ray_dir_x == 0) || (ray_dir_y == 0))) begin 
                     valid <= 0;
-                    ready <= 0;
+                    ready_internal <= 0;
                 end else begin 
                     valid <= 1;
-                    ready <= 0;
+                    ready_internal <= 0;
                 end
 
                 reg_ray_dir_x <= ray_dir_x;
@@ -385,8 +388,21 @@ module RayProcessor #(
                 g <= temp_g;
                 b <= temp_b;
                 valid_data_out <= 1;
-                ready <= 1;
+                ready_internal <= 1;
                 loop_index <= loop_index + 1; 
+
+                if (loop_index  % image_width == 0) begin
+                    last_x <= 1;
+                    count <= count + 1;
+                end else begin
+                    last_x <= 0;
+                end
+
+                if (loop_index == 0) begin
+                    sof <= 1;
+                end else begin
+                    sof <= 0;
+                end
 
             end
         default: $stop;

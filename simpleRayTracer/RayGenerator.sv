@@ -16,9 +16,9 @@ SOME BUGS/ OTHER POINTS:
 
 module RayGenerator
 (
-    input logic             clk, reset_n, ready,
-    input logic [10:0]       camera_pos_x, camera_pos_y, camera_pos_z,
-    input logic [10:0]       camera_dir_x, camera_dir_y, camera_dir_z,
+    input logic             clk, reset_n, ready_internal, ready_external,
+    input logic [10:0]      camera_pos_x, camera_pos_y, camera_pos_z,
+    input logic [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
     input logic [12:0]      image_width, image_height,
     input logic [31:0]      distance,
     output logic [31:0]     ray_dir_x, ray_dir_y, ray_dir_z
@@ -78,7 +78,7 @@ module RayGenerator
                     /* verilator lint_on WIDTH */
                 end
                 GENERATE_RAYS: begin
-                    if (ready) begin
+                    if (ready_internal && ready_external) begin
                         if (loop_index <= image_height * image_width) begin
                             /* verilator lint_off WIDTH */
                             pixel_x <= image_center_x + (loop_index % image_width) - (image_width / 2);
