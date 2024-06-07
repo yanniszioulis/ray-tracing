@@ -8,6 +8,7 @@ module RayTracingUnit
     output logic                validRead, lastX, Sof,
     output logic [7:0]          red, green, blue
 
+
 );
 
     logic                       ReadyInternal;

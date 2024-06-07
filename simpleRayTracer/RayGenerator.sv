@@ -37,7 +37,7 @@ module RayGenerator
     logic [31:0]            loop_index;
     logic [31:0]            pixel_x, pixel_y;
 
-    typedef enum logic [1:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, GENERATE_RAYS } state_t;
+    typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, UPDATE_LOOP } state_t;
 
     state_t state, next_state;
 
@@ -65,6 +65,7 @@ module RayGenerator
                     ray_dir_x <= 0;
                     ray_dir_y <= 0;
                     ray_dir_z <= 0;
+                    loop_index <= 0;
                 end 
                 CALCULATE_MU: begin
                     /* verilator lint_off WIDTH */
@@ -77,22 +78,31 @@ module RayGenerator
                     image_center_y <= camera_pos_y + mu * camera_dir_y;
                     /* verilator lint_on WIDTH */
                 end
+                STALL: begin
+                end
                 GENERATE_RAYS: begin
                     if (ready_internal && ready_external) begin
                         if (loop_index <= image_height * image_width) begin
-                            /* verilator lint_off WIDTH */
-                            pixel_x <= image_center_x + (loop_index % image_width) - (image_width / 2);
-                            pixel_y <= image_center_y - (loop_index / image_width) + (image_height / 2) - 1;
+                            //* verilator lint_off WIDTH */
+                            // pixel_x <= image_center_x + (loop_index % image_width) - (image_width / 2);
+                            // pixel_y <= image_center_y - (loop_index / image_width) + (image_height / 2) - 1;
                             
 
-                            ray_dir_x <= pixel_x - camera_pos_x;
-                            ray_dir_y <= pixel_y - camera_pos_y;
+                            ray_dir_x <= (image_center_x + (loop_index % image_width) - (image_width / 2)) - camera_pos_x;
+                            ray_dir_y <= (image_center_y - (loop_index / image_width) + (image_height / 2)-1)- camera_pos_y;
                             ray_dir_z <= distance;
+
+                            //loop_index <= loop_index + 1;
+                            // ray_dir_x <= pixel_x - camera_pos_x;
+                            // ray_dir_y <= pixel_y - camera_pos_y;
+                            // ray_dir_z <= distance;
                             /* verilator lint_on WIDTH */
 
-                            loop_index <= loop_index + 1;
                         end
                     end
+                end
+                UPDATE_LOOP: begin
+                    loop_index <= loop_index + 1;
                 end
             endcase
         end
@@ -109,11 +119,19 @@ module RayGenerator
                 next_state = CALCULATE_IMAGE;
             end
             CALCULATE_IMAGE: begin
+                next_state = STALL;
+            end
+            STALL: begin
                 next_state = GENERATE_RAYS;
             end
             GENERATE_RAYS: begin
+                next_state <= UPDATE_LOOP;
+            end
+            UPDATE_LOOP: begin
                 if (loop_index > image_height * image_width) begin
                     next_state = IDLE;
+                end else begin
+                    next_state = STALL;
                 end
             end
         endcase

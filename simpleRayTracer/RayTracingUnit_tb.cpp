@@ -4,11 +4,16 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <vector>
 
 int main(int argc, char** argv, char** env) {
     // Initialize Verilator
     int count = 0;
     int pixels = 0;
+    int eol = 0;
+
+    std::vector<int> lasts;
+
     Verilated::commandArgs(argc, argv);
 
     // Create an instance of the module
@@ -62,7 +67,11 @@ int main(int argc, char** argv, char** env) {
                         << static_cast<int>(top->green) << " "
                         << static_cast<int>(top->blue) << "\n";
                 pixels ++;
-                
+                if (top->lastX)
+                {
+                    lasts.push_back(pixels);
+                    eol++;
+                }
             }
             
         }
@@ -80,6 +89,13 @@ int main(int argc, char** argv, char** env) {
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
     std::cout << "Time taken: " << duration.count() << " seconds" << std::endl;
+    std::cout << "EOLs:" << eol << std::endl;
+    std::cout << "Pixels: " << pixels << std::endl;
+
+    // for (int i = 0; i < lasts.size(); i++)
+    // {
+    //     std::cout << "EOL at pixel number: " << lasts[i] << std::endl;
+    // }
 
     // Final model cleanup
     top->final();
