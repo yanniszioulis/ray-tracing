@@ -93,6 +93,8 @@ module RayProcessor #(
     logic [31:0]                oct_size_squared;
     logic                       in_range;
 
+    logic                       intermediate_ready;
+
     typedef enum logic [4:0] { 
         NEW_FRAME,
         INITIALISE,                     // 0
@@ -129,13 +131,13 @@ module RayProcessor #(
             NEW_FRAME: begin // 0
                 loop_index <= 0;
                 // valid_data_out <= 0;
-                ready_internal <= 1;
-                last_x <= 0;
+                //ready_internal <= 1;
+                // last_x <= 0;
                 world_size <= 2**COORD_BIT_LEN;
             end
             INITIALISE: begin // 1
 
-                ready_internal <= 0;
+                //ready_internal <= 0;
                 // valid_data_out <= 0;
                 // world_size <= 2**COORD_BIT_LEN;
                 oct_size <= 2**(COORD_BIT_LEN-1); // hard coded
@@ -198,13 +200,13 @@ module RayProcessor #(
 
                 if (ray_dir_z == 0) begin
                     valid <= 0;
-                    ready_internal <= 1;
+                    intermediate_ready <= 1;
                 end else if (loop_index == 0 && ((ray_dir_x == 0) || (ray_dir_y == 0))) begin 
                     valid <= 0;
-                    ready_internal <= 0;
+                    intermediate_ready <= 0;
                 end else begin 
                     valid <= 1;
-                    ready_internal <= 0;
+                    intermediate_ready <= 0;
                 end
 
                 reg_ray_dir_x <= ray_dir_x;
@@ -405,7 +407,7 @@ module RayProcessor #(
                 g <= temp_g;
                 b <= temp_b;
                 // valid_data_out <= 1;
-                ready_internal <= 1;
+                //ready_internal <= 1;
 
                 
 
@@ -417,14 +419,17 @@ module RayProcessor #(
 
     always_comb begin
         next_state = state;
-        case (state)
+        case (state) 
             NEW_FRAME: begin // 0
                 next_state = INITIALISE;
                 valid_data_out = 0;
+                last_x = 0;
+                ready_internal = 1;
             end
             INITIALISE: begin // 1
                 next_state = IDLE;
                 valid_data_out = 0;
+                ready_internal = 0;
             end
             IDLE: begin // 2
                 if (valid) begin
@@ -438,6 +443,12 @@ module RayProcessor #(
                     sof = 1;
                 end else begin
                     sof = 0;
+                end
+
+                if (intermediate_ready) begin 
+                    ready_internal = 1;
+                end else begin
+                    ready_internal = 0;
                 end
             end
             RAY_TRAVERSE_INITIALISE: begin // 3
@@ -505,16 +516,17 @@ module RayProcessor #(
                 next_state = OUTPUT_COLOUR;
             end
             OUTPUT_COLOUR: begin // 16
+                valid_data_out = 1;
                 if (ready_external) begin
-                    if (loop_index >= image_height * image_width - 1) begin
+                    if (loop_index >= image_height * image_width) begin
                         next_state = NEW_FRAME;
                     end else begin
                         next_state = INITIALISE;
+                        ready_internal = 1;
                     end
                 end else begin
                     next_state = OUTPUT_COLOUR;
                 end
-                valid_data_out = 1;
 
                 if ((loop_index ) % image_width == 0) begin
                     last_x = 1;
@@ -523,7 +535,7 @@ module RayProcessor #(
                 end
 
             end
-            default: $stop;
+        default: $stop;
         endcase
      end
 
