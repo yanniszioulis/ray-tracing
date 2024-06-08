@@ -17,12 +17,12 @@ class MainWindow(QWidget):
 
         # Left panel
         left_panel = QFrame()
-        left_panel.setStyleSheet("background-color: lightgray; border-radius: 2px;") 
+        left_panel.setStyleSheet("background-color: lightgray; border-radius: 2px;")
         left_panel.setFrameShape(QFrame.StyledPanel)
 
         # Right panel
         right_panel = QFrame()
-        right_panel.setStyleSheet("background-color: #555555; color: white; border-radius: 8px;") 
+        right_panel.setStyleSheet("background-color: #555555; color: white; border-radius: 8px;")
         right_panel.setFrameShape(QFrame.StyledPanel)
 
         # Parameters layout
@@ -32,7 +32,7 @@ class MainWindow(QWidget):
         # Title for right panel
         title_label = QLabel("Parameters")
         title_label.setFont(QFont("Helvetica", 22))
-        title_label.setStyleSheet("color: white;") 
+        title_label.setStyleSheet("color: white;")
 
         parameters_layout.addWidget(title_label)
 
@@ -63,10 +63,10 @@ class MainWindow(QWidget):
             hbox.addWidget(label)
             hbox.addWidget(input_box)
             parameters_layout.addLayout(hbox)
-        
+
         # Error label
         self.error_label = QLabel()
-        self.error_label.setStyleSheet("color: rgba(255, 0, 0, 150);") 
+        self.error_label.setStyleSheet("color: rgba(255, 0, 0, 150);")
         self.error_label.setFont(helvetica_font)
         parameters_layout.addWidget(self.error_label)
 
@@ -98,15 +98,15 @@ class MainWindow(QWidget):
         if empty_fields:
             self.error_label.setText("Please fill in all the fields.")
         else:
-            if self.validate_input_format():
+            if self.validateInput():
                 self.error_label.clear()
-                values = [input_box.text() for input_box in self.input_boxes]
-                # Call some external function here with values as a parameter probably 
+                values = self.getValues()
+                # Call some external function here with values as a parameter probably
                 print("INPUT DATA: ", values)
             else:
                 self.error_label.setText("Please enter valid data.")
 
-    def validate_input_format(self):
+    def validateInput(self):
         for i, input_box in enumerate(self.input_boxes):
             if i == 0 or i == 1 or i == 4:
                 try:
@@ -125,6 +125,16 @@ class MainWindow(QWidget):
             else:
                 return False
         return True
+
+    def getValues(self):
+        values = []
+        for i, input_box in enumerate(self.input_boxes):
+            if i == 0 or i == 1 or i == 4:
+                values.append(int(input_box.text()))
+            elif i == 2 or i == 3:
+                data = input_box.text().replace(" ", "").split(",")
+                values.extend(int(d) for d in data)
+        return values
 
 
 if __name__ == "__main__":
