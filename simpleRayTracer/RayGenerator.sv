@@ -65,7 +65,7 @@ module RayGenerator
                     ray_dir_x <= 0;
                     ray_dir_y <= 0;
                     ray_dir_z <= 0;
-                    loop_index <= 0;
+                    loop_index <= 1;
                 end 
                 CALCULATE_MU: begin
                     /* verilator lint_off WIDTH */

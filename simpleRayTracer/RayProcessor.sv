@@ -53,9 +53,9 @@ module RayProcessor #(
     reg signed [31:0]           curr_ray_dir_z;      
 
     // Ray setup.
-    logic [COORD_BIT_LEN:0]   ray_pos_x;
-    logic [COORD_BIT_LEN:0]   ray_pos_y;
-    logic [COORD_BIT_LEN:0]   ray_pos_z;
+    logic [COORD_BIT_LEN-1:0]   ray_pos_x;
+    logic [COORD_BIT_LEN-1:0]   ray_pos_y;
+    logic [COORD_BIT_LEN-1:0]   ray_pos_z;
 
     // Octree setup
     logic [31:0]                node [0:7];
@@ -71,9 +71,9 @@ module RayProcessor #(
     logic                       just_outside_z;
 
 
-    logic [COORD_BIT_LEN:0]   temp_ray_pos_x;
-    logic [COORD_BIT_LEN:0]   temp_ray_pos_y;
-    logic [COORD_BIT_LEN:0]   temp_ray_pos_z;
+    logic [COORD_BIT_LEN-1:0]   temp_ray_pos_x;
+    logic [COORD_BIT_LEN-1:0]   temp_ray_pos_y;
+    logic [COORD_BIT_LEN-1:0]   temp_ray_pos_z;
 
     logic                       within_x;
     logic                       within_y;
@@ -179,8 +179,8 @@ module RayProcessor #(
                 node[3] <= 0;
                 node[4] <= 0;
                 node[5] <= 2;
-                node[6] <= 0;
-                node[7] <= 0;
+                node[6] <= 3;
+                node[7] <= 1;
 
 
             end
@@ -259,7 +259,7 @@ module RayProcessor #(
             end
             RAY_STEP_ADJUST_DIR_VEC: begin // 7
 
-                if( magnitude_squared < oct_size_squared - 1) begin
+                if( magnitude_squared < oct_size_squared) begin
                     reg_ray_dir_x <= reg_ray_dir_x <<< 1;
                     reg_ray_dir_y <= reg_ray_dir_y <<< 1;
                     reg_ray_dir_z <= reg_ray_dir_z <<< 1;
@@ -375,6 +375,11 @@ module RayProcessor #(
                         temp_r <= 0; 
                         temp_g <= 255; 
                         temp_b <= 0;
+                    end
+                    3 : begin
+                        temp_r <= 0; 
+                        temp_g <= 0; 
+                        temp_b <= 255;
                     end
                     default: $stop;
                 endcase

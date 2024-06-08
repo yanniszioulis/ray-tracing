@@ -54,7 +54,7 @@ int main(int argc, char** argv, char** env) {
 
     // Simulate for a number of cycles
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 31710050; i++) {
+    for (int i = 0; i < 34710050; i++) {
         // Toggle clock
         for (int clk = 0; clk<2; clk++) {
             tfp->dump(2*i+clk);
@@ -76,7 +76,7 @@ int main(int argc, char** argv, char** env) {
             
         }
         count ++;
-        if (pixels == image_height * image_width + 20)
+        if (pixels == image_height * image_width)
         {
             std::cout << "Took: " << count - 20 << " clock cycles." << std::endl;
             break;
