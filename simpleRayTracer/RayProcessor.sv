@@ -14,7 +14,7 @@ module RayProcessor #(
     output logic                            ready_internal,                      // signal to go back to ray gen to tell it to generate new ray
     output logic                            valid_data_out,             // signal to next block/ buffer to read output from ray processor
     output logic                            last_x,
-    output logic                            sof,
+    output logic                            sof
 
 );
 

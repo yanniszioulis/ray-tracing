@@ -127,7 +127,7 @@ module RayGenerator
                 end
             end
             GENERATE_RAYS: begin
-                next_state <= UPDATE_LOOP;
+                next_state = UPDATE_LOOP;
             end
             UPDATE_LOOP: begin
                 if (loop_index > image_height * image_width) begin
