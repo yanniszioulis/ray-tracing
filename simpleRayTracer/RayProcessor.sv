@@ -10,6 +10,7 @@ module RayProcessor #(
     input logic [31:0]                      ray_dir_x, ray_dir_y, ray_dir_z,
     input logic [COORD_BIT_LEN:0]           camera_pos_x, camera_pos_y, camera_pos_z,
     input logic [12:0]                      image_width, image_height,
+    input logic                             ready_external,
     output logic [7:0]                      r, g, b,
     output logic                            ready_internal,                      // signal to go back to ray gen to tell it to generate new ray
     output logic                            valid_data_out,             // signal to next block/ buffer to read output from ray processor
@@ -91,7 +92,8 @@ module RayProcessor #(
     logic [31:0]                magnitude_squared;
     logic [31:0]                oct_size_squared;
     logic                       in_range;
-    logic [31:0]                count;
+
+    logic                       intermediate_ready;
 
     typedef enum logic [4:0] { 
         NEW_FRAME,
@@ -128,15 +130,15 @@ module RayProcessor #(
         case (state)
             NEW_FRAME: begin // 0
                 loop_index <= 0;
-                valid_data_out <= 0;
-                ready_internal <= 1;
-                last_x <= 0;
+                // valid_data_out <= 0;
+                //ready_internal <= 1;
+                // last_x <= 0;
                 world_size <= 2**COORD_BIT_LEN;
             end
             INITIALISE: begin // 1
 
-                ready_internal <= 0;
-                valid_data_out <= 0;
+                //ready_internal <= 0;
+                // valid_data_out <= 0;
                 // world_size <= 2**COORD_BIT_LEN;
                 oct_size <= 2**(COORD_BIT_LEN-1); // hard coded
 
@@ -194,17 +196,17 @@ module RayProcessor #(
             end
             IDLE: begin // 2
                 
-                valid_data_out <= 0;
+                // valid_data_out <= 0;
 
                 if (ray_dir_z == 0) begin
                     valid <= 0;
-                    ready_internal <= 1;
+                    intermediate_ready <= 1;
                 end else if (loop_index == 0 && ((ray_dir_x == 0) || (ray_dir_y == 0))) begin 
                     valid <= 0;
-                    ready_internal <= 0;
+                    intermediate_ready <= 0;
                 end else begin 
                     valid <= 1;
-                    ready_internal <= 0;
+                    intermediate_ready <= 0;
                 end
 
                 reg_ray_dir_x <= ray_dir_x;
@@ -215,11 +217,7 @@ module RayProcessor #(
                 curr_ray_dir_y <= ray_dir_y;
                 curr_ray_dir_z <= ray_dir_z;
 
-                if (loop_index == 0) begin
-                    sof <= 1;
-                end else begin
-                    sof <= 0;
-                end
+                
 
             end
             RAY_TRAVERSE_INITIALISE: begin // 3
@@ -391,6 +389,7 @@ module RayProcessor #(
                     end
                     default: $stop;
                 endcase
+                loop_index <= loop_index + 1; 
 
             end
             RAY_OUT_OF_BOUND: begin // 15
@@ -399,6 +398,7 @@ module RayProcessor #(
                 temp_r <= 0; 
                 temp_g <= 0; 
                 temp_b <= 0;
+                loop_index <= loop_index + 1; 
 
             end
             OUTPUT_COLOUR: begin // 16
@@ -406,16 +406,10 @@ module RayProcessor #(
                 r <= temp_r;
                 g <= temp_g;
                 b <= temp_b;
-                valid_data_out <= 1;
-                ready_internal <= 1;
-                loop_index <= loop_index + 1; 
+                // valid_data_out <= 1;
+                //ready_internal <= 1;
 
-                if ((loop_index + 2 ) % image_width == 0) begin
-                    last_x <= 1;
-                    count <= count + 1;
-                end else begin
-                    last_x <= 0;
-                end
+                
 
             end
         default: $stop;
@@ -425,18 +419,36 @@ module RayProcessor #(
 
     always_comb begin
         next_state = state;
-        case (state)
+        case (state) 
             NEW_FRAME: begin // 0
                 next_state = INITIALISE;
+                valid_data_out = 0;
+                last_x = 0;
+                ready_internal = 1;
             end
             INITIALISE: begin // 1
                 next_state = IDLE;
+                valid_data_out = 0;
+                ready_internal = 0;
             end
             IDLE: begin // 2
                 if (valid) begin
                     next_state = RAY_TRAVERSE_INITIALISE;
                 end else begin
                     next_state = IDLE;
+                end
+                valid_data_out = 0;
+
+                if (loop_index == 0) begin
+                    sof = 1;
+                end else begin
+                    sof = 0;
+                end
+
+                if (intermediate_ready) begin 
+                    ready_internal = 1;
+                end else begin
+                    ready_internal = 0;
                 end
             end
             RAY_TRAVERSE_INITIALISE: begin // 3
@@ -504,13 +516,26 @@ module RayProcessor #(
                 next_state = OUTPUT_COLOUR;
             end
             OUTPUT_COLOUR: begin // 16
-                if (loop_index >= image_height * image_width - 1) begin
-                    next_state = NEW_FRAME;
+                valid_data_out = 1;
+                if (ready_external) begin
+                    if (loop_index >= image_height * image_width) begin
+                        next_state = NEW_FRAME;
+                    end else begin
+                        next_state = INITIALISE;
+                        ready_internal = 1;
+                    end
                 end else begin
-                    next_state = INITIALISE;
+                    next_state = OUTPUT_COLOUR;
                 end
+
+                if ((loop_index ) % image_width == 0) begin
+                    last_x = 1;
+                end else begin
+                    last_x = 0;
+                end
+
             end
-            default: $stop;
+        default: $stop;
         endcase
      end
 

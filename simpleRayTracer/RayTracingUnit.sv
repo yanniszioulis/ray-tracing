@@ -49,6 +49,7 @@ module RayTracingUnit
         .camera_pos_z(cameraPosZ),
         .image_width(imageWidth),
         .image_height(imageHeight),
+        .ready_external(ReadyExternal),
         .r(red),
         .g(green),
         .b(blue),

@@ -120,7 +120,7 @@ module RayGenerator
                 next_state = STALL;
             end
             STALL: begin
-                if (ready_internal && ready_external) begin
+                if (ready_internal) begin
                     next_state = GENERATE_RAYS;
                 end else begin
                     next_state = STALL;
