@@ -37,7 +37,7 @@ int main(int argc, char** argv, char** env) {
     top->cameraDirZ = 1; // Assuming the camera is pointing in the positive z direction
     top->imageWidth = image_width;
     top->imageHeight = image_height;
-    top->cameraDistance = 230; // Example distance
+    top->cameraDistance = 230; // Example distance, original: 230
     top->ReadyExternal = 1;
 
     // Open a file to write the output in PPM format

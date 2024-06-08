@@ -81,7 +81,6 @@ module RayGenerator
                 STALL: begin
                 end
                 GENERATE_RAYS: begin
-                    if (ready_internal && ready_external) begin
                         if (loop_index <= image_height * image_width) begin
                             //* verilator lint_off WIDTH */
                             // pixel_x <= image_center_x + (loop_index % image_width) - (image_width / 2);
@@ -99,7 +98,6 @@ module RayGenerator
                             /* verilator lint_on WIDTH */
 
                         end
-                    end
                 end
                 UPDATE_LOOP: begin
                     loop_index <= loop_index + 1;
@@ -122,7 +120,11 @@ module RayGenerator
                 next_state = STALL;
             end
             STALL: begin
-                next_state = GENERATE_RAYS;
+                if (ready_internal && ready_external) begin
+                    next_state = GENERATE_RAYS;
+                end else begin
+                    next_state = STALL;
+                end
             end
             GENERATE_RAYS: begin
                 next_state <= UPDATE_LOOP;

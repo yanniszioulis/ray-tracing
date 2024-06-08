@@ -42,7 +42,7 @@ int main(int argc, char** argv, char** env) {
     top->camera_dir_z = 1;
     top->image_width = 512;
     top->image_height = 512;
-    top->distance = 230;
+    top->distance = 1000; // Original: 230
 
     // Simulation loop
     for (int cycle = 0; cycle < SIM_CYCLES; ++cycle) {
