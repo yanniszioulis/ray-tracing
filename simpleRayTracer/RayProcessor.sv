@@ -105,19 +105,19 @@ module RayProcessor #(
         RAY_STEP_CHECK_PROXIMITY,       // 7
         RAY_STEP,                       // 8
         RAY_STEP_POSITION_CALC,         // 9
-        STALL,                          // 9.5
-        RAY_STEP_CHECK,                 // 10
-        RAY_STEP_BRANCH,                // 11
-        COLOUR_FORMAT,                  // 12
-        RAY_OUT_OF_BOUND,               // 13
-        OUTPUT_COLOUR                   // 14
+        STALL,                          // 10
+        RAY_STEP_CHECK,                 // 11
+        RAY_STEP_BRANCH,                // 12
+        COLOUR_FORMAT,                  // 13
+        RAY_OUT_OF_BOUND,               // 14
+        OUTPUT_COLOUR                   // 15
      } state_t;
 
      state_t state, next_state;
 
     always_ff @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
-            state <= INITIALISE;
+            state <= NEW_FRAME;
         end else begin
             state <= next_state;
         end
@@ -128,12 +128,16 @@ module RayProcessor #(
         case (state)
             NEW_FRAME: begin // 0
                 loop_index <= 0;
+                valid_data_out <= 0;
+                ready_internal <= 1;
+                last_x <= 0;
+                world_size <= 2**COORD_BIT_LEN;
             end
             INITIALISE: begin // 1
 
                 ready_internal <= 0;
                 valid_data_out <= 0;
-                world_size <= 2**COORD_BIT_LEN;
+                // world_size <= 2**COORD_BIT_LEN;
                 oct_size <= 2**(COORD_BIT_LEN-1); // hard coded
 
                 /* verilator lint_off WIDTH */
@@ -166,6 +170,10 @@ module RayProcessor #(
                
 
                 just_outside_AABB <= 0; 
+
+                within_world_x <= 1;
+                within_world_y <= 1;
+                within_world_z <= 1;
                 within_world <= 1;
                 //octant_no <= 0;
                 dir_big_enough <= 0;
@@ -425,7 +433,11 @@ module RayProcessor #(
                 next_state = IDLE;
             end
             IDLE: begin // 2
-                next_state = valid ? RAY_TRAVERSE_INITIALISE : IDLE;
+                if (valid) begin
+                    next_state = RAY_TRAVERSE_INITIALISE;
+                end else begin
+                    next_state = IDLE;
+                end
             end
             RAY_TRAVERSE_INITIALISE: begin // 3
                 next_state = RAY_TRAVERSE_OCTANT_NO;
@@ -446,8 +458,11 @@ module RayProcessor #(
                 
             end
             RAY_STEP_ADJUST_DIR_VEC: begin // 7
-                next_state = dir_big_enough ? RAY_STEP_CHECK_PROXIMITY : RAY_TRAVERSE_UPDATE;
-            end
+                if (dir_big_enough) begin
+                    next_state = RAY_STEP_CHECK_PROXIMITY;
+                end else begin
+                    next_state = RAY_TRAVERSE_UPDATE;
+                end            end
             RAY_STEP_CHECK_PROXIMITY: begin // 8
                 next_state = RAY_STEP;
             end
@@ -467,10 +482,20 @@ module RayProcessor #(
                 end
             end
             RAY_STEP_CHECK: begin // 12
-                next_state = (in_range) ? RAY_STEP_CHECK_PROXIMITY : RAY_STEP_CHECK_PROXIMITY;
+                // next_state = (in_range) ? RAY_STEP_CHECK_PROXIMITY : RAY_STEP_CHECK_PROXIMITY;
+                if (in_range) begin
+                    next_state = RAY_STEP_CHECK_PROXIMITY;
+                end else begin
+                    next_state = RAY_STEP_CHECK_PROXIMITY;
+                end
             end
             RAY_STEP_BRANCH: begin // 13
-                next_state = within_world ? RAY_TRAVERSE_INITIALISE : RAY_OUT_OF_BOUND;
+                // next_state = within_world ? RAY_TRAVERSE_INITIALISE : RAY_OUT_OF_BOUND;
+                if (within_world) begin
+                    next_state = RAY_TRAVERSE_INITIALISE;
+                end else begin
+                    next_state = RAY_OUT_OF_BOUND;
+                end
             end
             COLOUR_FORMAT: begin // 14
                 next_state = OUTPUT_COLOUR;
