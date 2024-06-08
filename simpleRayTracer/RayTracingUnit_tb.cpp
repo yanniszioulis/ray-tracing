@@ -25,8 +25,8 @@ int main(int argc, char** argv, char** env) {
     tfp->open("RayTracingUnit.vcd");
 
     // Initialize simulation inputs
-    int image_width = 512;
-    int image_height = 512;
+    int image_width = 400;
+    int image_height = 400;
     top->clk = 0;
     top->reset = 1;
     top->cameraPosX = 250;

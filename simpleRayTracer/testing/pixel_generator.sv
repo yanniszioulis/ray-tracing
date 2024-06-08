@@ -212,8 +212,8 @@ RayTracingUnit ray_tracing_unit (
     .cameraPosX(11'd250),  // Assign appropriate values
     .cameraPosY(11'd512),  // Assign appropriate values
     .cameraPosZ(11'd0),  // Assign appropriate values
-    .imageWidth(13'd512), // Assign appropriate values
-    .imageHeight(13'd512), // Assign appropriate values
+    .imageWidth(13'd200), // Assign appropriate values
+    .imageHeight(13'd200), // Assign appropriate values
     .ReadyExternal(ready),
     .cameraDistance(32'd230), // Assign appropriate values
     .validRead(valid_int),

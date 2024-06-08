@@ -8,6 +8,7 @@ module RayTracingUnit
     output logic                validRead, lastX, Sof,
     output logic [7:0]          red, green, blue
 
+
 );
 
     logic                       ReadyInternal;
@@ -48,6 +49,7 @@ module RayTracingUnit
         .camera_pos_z(cameraPosZ),
         .image_width(imageWidth),
         .image_height(imageHeight),
+        .ready_external(ReadyExternal),
         .r(red),
         .g(green),
         .b(blue),

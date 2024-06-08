@@ -10,6 +10,7 @@ module RayProcessor #(
     input logic [31:0]                      ray_dir_x, ray_dir_y, ray_dir_z,
     input logic [COORD_BIT_LEN:0]           camera_pos_x, camera_pos_y, camera_pos_z,
     input logic [12:0]                      image_width, image_height,
+    input logic                             ready_external,
     output logic [7:0]                      r, g, b,
     output logic                            ready_internal,                      // signal to go back to ray gen to tell it to generate new ray
     output logic                            valid_data_out,             // signal to next block/ buffer to read output from ray processor
@@ -91,30 +92,28 @@ module RayProcessor #(
     logic [31:0]                magnitude_squared;
     logic [31:0]                oct_size_squared;
     logic                       in_range;
-    logic [31:0]                count;
 
     typedef enum logic [4:0] { 
-        NEW_FRAME,                      // 0
-        INITIALISE,                     // 1
-        IDLE,                           // 2
-        RAY_TRAVERSE_INITIALISE,        // 3
-        RAY_TRAVERSE_OCTANT_NO,         // 4
-        RAY_TRAVERSE_ADJUST,            // 5                           
-        RAY_TRAVERSE_UPDATE,            // 6
-        RAY_STEP_ADJUST_DIR_VEC,        // 7
-        RAY_STEP_CHECK_PROXIMITY,       // 8
-        RAY_STEP,                       // 9
-        RAY_STEP_POSITION_CALC,         // 10
-        STALL,                          // 11
-        RAY_STEP_CHECK,                 // 12
-        RAY_STEP_BRANCH,                // 13
-        COLOUR_FORMAT,                  // 14
-        RAY_OUT_OF_BOUND,               // 15
-        OUTPUT_COLOUR                   // 16
-    } state_t;
+        NEW_FRAME,
+        INITIALISE,                     // 0
+        IDLE,                           // 1
+        RAY_TRAVERSE_INITIALISE,        // 2
+        RAY_TRAVERSE_OCTANT_NO,         // 3
+        RAY_TRAVERSE_ADJUST,            // 4                           
+        RAY_TRAVERSE_UPDATE,            // 5
+        RAY_STEP_ADJUST_DIR_VEC,        // 6
+        RAY_STEP_CHECK_PROXIMITY,       // 7
+        RAY_STEP,                       // 8
+        RAY_STEP_POSITION_CALC,         // 9
+        STALL,                          // 10
+        RAY_STEP_CHECK,                 // 11
+        RAY_STEP_BRANCH,                // 12
+        COLOUR_FORMAT,                  // 13
+        RAY_OUT_OF_BOUND,               // 14
+        OUTPUT_COLOUR                   // 15
+     } state_t;
 
-    state_t state, next_state;
-
+     state_t state, next_state;
 
     always_ff @(posedge clk or negedge reset_n) begin
         if (reset_n) begin
@@ -129,15 +128,16 @@ module RayProcessor #(
         case (state)
             NEW_FRAME: begin // 0
                 loop_index <= 0;
-                valid_data_out <= 0;
+                // valid_data_out <= 0;
                 ready_internal <= 1;
                 last_x <= 0;
                 world_size <= 2**COORD_BIT_LEN;
             end
             INITIALISE: begin // 1
 
-                valid_data_out <= 0;
                 ready_internal <= 0;
+                // valid_data_out <= 0;
+                // world_size <= 2**COORD_BIT_LEN;
                 oct_size <= 2**(COORD_BIT_LEN-1); // hard coded
 
                 /* verilator lint_off WIDTH */
@@ -187,22 +187,14 @@ module RayProcessor #(
                 node[3] <= 0;
                 node[4] <= 0;
                 node[5] <= 2;
-                node[6] <= 0;
+                node[6] <= 3;
                 node[7] <= 1;
-
-
-                if ((loop_index + 1) % image_width == 0) begin
-                    last_x <= 1;
-                    count <= count + 1;
-                end else begin
-                    last_x <= 0;
-                end
 
 
             end
             IDLE: begin // 2
                 
-                valid_data_out <= 0;
+                // valid_data_out <= 0;
 
                 if (ray_dir_z == 0) begin
                     valid <= 0;
@@ -223,11 +215,7 @@ module RayProcessor #(
                 curr_ray_dir_y <= ray_dir_y;
                 curr_ray_dir_z <= ray_dir_z;
 
-                if (loop_index == 0) begin
-                    sof <= 1;
-                end else begin
-                    sof <= 0;
-                end
+                
 
             end
             RAY_TRAVERSE_INITIALISE: begin // 3
@@ -392,8 +380,14 @@ module RayProcessor #(
                         temp_g <= 255; 
                         temp_b <= 0;
                     end
+                    3 : begin
+                        temp_r <= 0; 
+                        temp_g <= 0; 
+                        temp_b <= 255;
+                    end
                     default: $stop;
                 endcase
+                loop_index <= loop_index + 1; 
 
             end
             RAY_OUT_OF_BOUND: begin // 15
@@ -402,6 +396,7 @@ module RayProcessor #(
                 temp_r <= 0; 
                 temp_g <= 0; 
                 temp_b <= 0;
+                loop_index <= loop_index + 1; 
 
             end
             OUTPUT_COLOUR: begin // 16
@@ -409,9 +404,10 @@ module RayProcessor #(
                 r <= temp_r;
                 g <= temp_g;
                 b <= temp_b;
-                valid_data_out <= 1;
+                // valid_data_out <= 1;
                 ready_internal <= 1;
-                loop_index <= loop_index + 1; 
+
+                
 
             end
         default: $stop;
@@ -424,16 +420,24 @@ module RayProcessor #(
         case (state)
             NEW_FRAME: begin // 0
                 next_state = INITIALISE;
+                valid_data_out = 0;
             end
             INITIALISE: begin // 1
                 next_state = IDLE;
+                valid_data_out = 0;
             end
             IDLE: begin // 2
-                // next_state = valid ? RAY_TRAVERSE_INITIALISE : IDLE;
                 if (valid) begin
                     next_state = RAY_TRAVERSE_INITIALISE;
                 end else begin
                     next_state = IDLE;
+                end
+                valid_data_out = 0;
+
+                if (loop_index == 0) begin
+                    sof = 1;
+                end else begin
+                    sof = 0;
                 end
             end
             RAY_TRAVERSE_INITIALISE: begin // 3
@@ -455,13 +459,11 @@ module RayProcessor #(
                 
             end
             RAY_STEP_ADJUST_DIR_VEC: begin // 7
-                // next_state = dir_big_enough ? RAY_STEP_CHECK_PROXIMITY : RAY_TRAVERSE_UPDATE;
                 if (dir_big_enough) begin
                     next_state = RAY_STEP_CHECK_PROXIMITY;
                 end else begin
                     next_state = RAY_TRAVERSE_UPDATE;
-                end
-            end
+                end            end
             RAY_STEP_CHECK_PROXIMITY: begin // 8
                 next_state = RAY_STEP;
             end
@@ -503,11 +505,23 @@ module RayProcessor #(
                 next_state = OUTPUT_COLOUR;
             end
             OUTPUT_COLOUR: begin // 16
-                if (loop_index >= image_height * image_width - 1) begin
-                    next_state = NEW_FRAME;
+                if (ready_external) begin
+                    if (loop_index >= image_height * image_width - 1) begin
+                        next_state = NEW_FRAME;
+                    end else begin
+                        next_state = INITIALISE;
+                    end
                 end else begin
-                    next_state = INITIALISE;
+                    next_state = OUTPUT_COLOUR;
                 end
+                valid_data_out = 1;
+
+                if ((loop_index ) % image_width == 0) begin
+                    last_x = 1;
+                end else begin
+                    last_x = 0;
+                end
+
             end
             default: $stop;
         endcase

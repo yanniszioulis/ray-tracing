@@ -9,10 +9,10 @@ module pixgen_tb;
     parameter READY_MODE = RANDOM_READY;
 
 
-    parameter TIMEOUT = 10000;           //Time to wait for valid to be true
-    parameter X_SIZE = 384;             //X dimension of image in words (words = pixels * 3/4)
-    parameter Y_SIZE = 512;             //Y dimension of image
-    parameter ENDTIME = 4000000000;       //End time of simulation
+    parameter TIMEOUT = 50000;           //Time to wait for valid to be true
+    parameter X_SIZE = 150;             //X dimension of image in words (words = pixels * 3/4)
+    parameter Y_SIZE = 200;             //Y dimension of image
+    parameter ENDTIME = 40000000000;       //End time of simulation
     parameter RND_SEED = 1246504138;    //Random seed for ready signal generation
     
     //Simulation configuration
@@ -84,8 +84,8 @@ module pixgen_tb;
             end
 
             RANDOM_READY: begin
-                ready <= prbs[32];
-                //ready <= 1;
+                // ready <= prbs[32];
+                ready <= 1;
             end
 
             READY_AFTER_VALID: begin
@@ -114,6 +114,7 @@ module pixgen_tb;
 
         //Check for timeout waiting for valid
         if (valid) checkpoint = $time;
+
         if ($time > checkpoint + TIMEOUT) begin
             $display("Error: Timeout waiting for valid");
             checkpoint = $time;
