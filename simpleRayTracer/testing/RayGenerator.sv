@@ -41,7 +41,7 @@ module RayGenerator
 
     state_t state, next_state;
 
-    always_ff @(posedge clk or negedge reset_n) begin
+    always_ff @(posedge clk) begin
         if (reset_n) begin
             state <= IDLE;
         end else begin
@@ -50,7 +50,7 @@ module RayGenerator
         
     end
 
-    always_ff @(posedge clk or negedge reset_n) begin
+    always_ff @(posedge clk) begin
         if (reset_n) begin
             mu <= 0;
             image_center_x <= 0;

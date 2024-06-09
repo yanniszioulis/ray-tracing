@@ -117,7 +117,7 @@ module RayProcessor #(
 
      state_t state, next_state;
 
-    always_ff @(posedge clk or negedge reset_n) begin
+    always_ff @(posedge clk) begin
         if (reset_n) begin
             state <= NEW_FRAME;
         end else begin
