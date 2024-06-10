@@ -15,6 +15,9 @@ module RayTracingUnit
     logic [31:0]                dirX; 
     logic [31:0]                dirY; 
     logic [31:0]                dirZ;
+    logic [31:0]                 addr1;
+    logic [31:0]                dout1;
+    logic                       ren;
 
     RayGenerator ray_generator 
     (
@@ -56,7 +59,18 @@ module RayTracingUnit
         .ready_internal(ReadyInternal),
         .valid_data_out(validRead),
         .last_x(lastX),
-        .sof(Sof)
+        .sof(Sof),
+        .address(addr1),
+        .node(dout1),
+        .ren(ren)
+    );
+
+    octant_rom OctantRom
+    (
+        .clk(clk),
+        .addr1(addr1),
+        .dout1(dout1),
+        .ren(ren)
     );
 
 endmodule
