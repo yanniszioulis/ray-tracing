@@ -1,0 +1,58 @@
+import pygame
+import sys
+
+# Initialize pygame
+pygame.init()
+pygame.joystick.init()
+
+# Check if there is any joystick connected
+if pygame.joystick.get_count() == 0:
+    print("No joystick connected")
+    sys.exit()
+
+# Initialize the Xbox controller
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+
+# Initial camera position
+camera_pos_x = 0
+camera_pos_y = 0
+camera_pos_z = 0
+
+# Sensitivity for camera movement
+sensitivity = 1.0
+
+print("Use the left joystick to move the camera. Press 'Ctrl+C' to exit.")
+
+def update_camera_position():
+    global camera_pos_x, camera_pos_y, camera_pos_z
+    
+    # Get the joystick values
+    left_stick_x = joystick.get_axis(0)  # Left joystick X axis
+    left_stick_y = joystick.get_axis(1)  # Left joystick Y axis
+
+    # Update camera position
+    camera_pos_x += left_stick_x * sensitivity
+    camera_pos_y += left_stick_y * sensitivity
+
+    # Print updated camera position for debugging
+    print(f"Camera Position: X={camera_pos_x}, Y={camera_pos_y}, Z={camera_pos_z}")
+
+try:
+    while True:
+        # Handle pygame events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        # Update camera position based on joystick input
+        update_camera_position()
+
+        # Delay to reduce CPU usage
+        pygame.time.wait(100)
+
+except KeyboardInterrupt:
+    print("Exiting...")
+    pygame.quit()
+    sys.exit()
