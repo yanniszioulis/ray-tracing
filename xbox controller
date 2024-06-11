@@ -1,18 +1,13 @@
 import pygame
 import sys
+import serial
 
 # Initialize pygame
 pygame.init()
-pygame.joystick.init()
 
-# Check if there is any joystick connected
-if pygame.joystick.get_count() == 0:
-    print("No joystick connected")
-    sys.exit()
-
-# Initialize the Xbox controller
-joystick = pygame.joystick.Joystick(0)
-joystick.init()
+# Create a window
+screen = pygame.display.set_mode((800, 600))
+pygame.display.set_caption("WASD Camera Control")
 
 # Initial camera position
 camera_pos_x = 0
@@ -20,23 +15,34 @@ camera_pos_y = 0
 camera_pos_z = 0
 
 # Sensitivity for camera movement
-sensitivity = 1.0
+sensitivity = 5.0
 
-print("Use the left joystick to move the camera. Press 'Ctrl+C' to exit.")
+# Initialize serial connection to FPGA (adjust port and baud rate as needed)
+ser = serial.Serial('/dev/ttyUSB0', 115200)
 
-def update_camera_position():
+print("Use WASD to move the camera horizontally, SPACE and CTRL to move vertically. Press 'ESC' to exit.")
+
+def update_camera_position(keys):
     global camera_pos_x, camera_pos_y, camera_pos_z
-    
-    # Get the joystick values
-    left_stick_x = joystick.get_axis(0)  # Left joystick X axis
-    left_stick_y = joystick.get_axis(1)  # Left joystick Y axis
 
-    # Update camera position
-    camera_pos_x += left_stick_x * sensitivity
-    camera_pos_y += left_stick_y * sensitivity
+    if keys[pygame.K_w]:
+        camera_pos_y += sensitivity
+    if keys[pygame.K_s]:
+        camera_pos_y -= sensitivity
+    if keys[pygame.K_a]:
+        camera_pos_x -= sensitivity
+    if keys[pygame.K_d]:
+        camera_pos_x += sensitivity
+    if keys[pygame.K_SPACE]:
+        camera_pos_z += sensitivity
+    if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+        camera_pos_z -= sensitivity
 
     # Print updated camera position for debugging
     print(f"Camera Position: X={camera_pos_x}, Y={camera_pos_y}, Z={camera_pos_z}")
+
+    # Send camera position to FPGA
+    ser.write(f"{camera_pos_x},{camera_pos_y},{camera_pos_z}\n".encode())
 
 try:
     while True:
@@ -46,8 +52,11 @@ try:
                 pygame.quit()
                 sys.exit()
 
-        # Update camera position based on joystick input
-        update_camera_position()
+        # Get the state of all keyboard buttons
+        keys = pygame.key.get_pressed()
+
+        # Update camera position based on WASD keys
+        update_camera_position(keys)
 
         # Delay to reduce CPU usage
         pygame.time.wait(100)
@@ -55,4 +64,5 @@ try:
 except KeyboardInterrupt:
     print("Exiting...")
     pygame.quit()
+    ser.close()
     sys.exit()
