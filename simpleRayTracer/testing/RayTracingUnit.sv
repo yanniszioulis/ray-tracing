@@ -18,6 +18,7 @@ module RayTracingUnit
     logic [31:0]                 addr1;
     logic [31:0]                dout1;
     logic                       ren;
+    logic [31:0]                loopIndex;
 
     RayGenerator ray_generator 
     (
@@ -36,7 +37,8 @@ module RayTracingUnit
         .distance(cameraDistance),
         .ray_dir_x(dirX),
         .ray_dir_y(dirY),
-        .ray_dir_z(dirZ)
+        .ray_dir_z(dirZ),
+        .loop_index(loopIndex)
     );
 
 
@@ -62,7 +64,8 @@ module RayTracingUnit
         .sof(Sof),
         .address(addr1),
         .node(dout1),
-        .ren(ren)
+        .ren(ren),
+        .loop_index(loopIndex)
     );
 
     octant_rom OctantRom

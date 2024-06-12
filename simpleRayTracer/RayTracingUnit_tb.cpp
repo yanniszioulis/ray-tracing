@@ -30,7 +30,7 @@ int main(int argc, char** argv, char** env) {
     top->clk = 0;
     top->reset = 1;
     top->cameraPosX = 250;
-    top->cameraPosY = 512;
+    top->cameraPosY = 250;
     top->cameraPosZ = 0;
     top->cameraDirX = 0;
     top->cameraDirY = 0;
@@ -54,7 +54,7 @@ int main(int argc, char** argv, char** env) {
 
     // Simulate for a number of cycles
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 85971000; i++) {
+    for (int i = 0; i < 65971000; i++) {
         // Toggle clock
         for (int clk = 0; clk<2; clk++) {
             tfp->dump(2*i+clk);

@@ -21,7 +21,8 @@ module RayGenerator
     input logic [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
     input logic [12:0]      image_width, image_height,
     input logic [31:0]      distance,
-    output logic [31:0]     ray_dir_x, ray_dir_y, ray_dir_z
+    output logic [31:0]     ray_dir_x, ray_dir_y, ray_dir_z,
+    output logic [31:0]     loop_index
 
     // Debugging signals:
     // output logic [1:0]      curr_state,
@@ -34,7 +35,7 @@ module RayGenerator
 
     logic [31:0]            image_center_x, image_center_y;
     logic [31:0]            mu;
-    logic [31:0]            loop_index;
+    // logic [31:0]            loop_index;
     logic [31:0]            pixel_x, pixel_y;
 
     typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, UPDATE_LOOP } state_t;
@@ -110,29 +111,32 @@ module RayGenerator
         // curr_state = state; <- debugging
         next_state = state;
         case (state)
-            IDLE: begin
+            IDLE: begin // 0
                 next_state = CALCULATE_MU;
+                // loop_index = 0;
             end
-            CALCULATE_MU: begin
+            CALCULATE_MU: begin // 1
                 next_state = CALCULATE_IMAGE;
             end
-            CALCULATE_IMAGE: begin
+            CALCULATE_IMAGE: begin // 2
                 next_state = STALL;
             end
-            STALL: begin
+            STALL: begin // 3
                 if (ready_internal) begin
                     next_state = GENERATE_RAYS;
                 end else begin
                     next_state = STALL;
                 end
             end
-            GENERATE_RAYS: begin
+            GENERATE_RAYS: begin // 4
                 next_state = UPDATE_LOOP;
             end
-            UPDATE_LOOP: begin
-                if (loop_index > image_height * image_width) begin
+            UPDATE_LOOP: begin // 5
+                if (loop_index >= image_height * image_width) begin
+                    // loop_index = 0;
                     next_state = IDLE;
                 end else begin
+                    // loop_index = loop_index + 1;
                     next_state = STALL;
                 end
             end
