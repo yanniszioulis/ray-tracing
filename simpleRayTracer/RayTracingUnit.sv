@@ -1,10 +1,10 @@
 module RayTracingUnit
 (
     input logic                 clk, reset,
-    input logic [10:0]          cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ,
+    input logic [10:0]          cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ, cameraRightX, cameraRightY, cameraRightZ, cameraUpX, cameraUpY, cameraUpZ,
     input logic [12:0]          imageWidth, imageHeight,
     input logic                 ReadyExternal,
-    input logic [31:0]          cameraDistance,
+    // input logic [31:0]          cameraDistance,
     output logic                validRead, lastX, Sof,
     output logic [7:0]          red, green, blue
 
@@ -32,9 +32,15 @@ module RayTracingUnit
         .camera_dir_x(cameraDirX),
         .camera_dir_y(cameraDirY),
         .camera_dir_z(cameraDirZ),
+        .camera_right_x(cameraRightX),
+        .camera_right_y(cameraRightY),
+        .camera_right_z(cameraRightZ),
+        .camera_up_x(cameraUpX),
+        .camera_up_y(cameraUpY),
+        .camera_up_z(cameraUpZ),
         .image_width(imageWidth),
         .image_height(imageHeight),
-        .distance(cameraDistance),
+        // .distance(cameraDistance),
         .ray_dir_x(dirX),
         .ray_dir_y(dirY),
         .ray_dir_z(dirZ),

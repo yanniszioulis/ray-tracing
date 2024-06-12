@@ -19,8 +19,10 @@ module RayGenerator
     input logic             clk, reset_n, ready_internal, ready_external,
     input logic [10:0]      camera_pos_x, camera_pos_y, camera_pos_z,
     input logic [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
+    input logic [10:0]      camera_right_x, camera_right_y, camera_right_z,
+    input logic [10:0]      camera_up_x, camera_up_y, camera_up_z,
     input logic [12:0]      image_width, image_height,
-    input logic [31:0]      distance,
+    // input logic [31:0]      distance,
     output logic [31:0]     ray_dir_x, ray_dir_y, ray_dir_z,
     output logic [31:0]     loop_index
 
@@ -36,7 +38,8 @@ module RayGenerator
     logic [31:0]            image_center_x, image_center_y;
     logic [31:0]            mu;
     // logic [31:0]            loop_index;
-    logic [31:0]            pixel_x, pixel_y;
+    // logic [31:0]            pixel_x, pixel_y;
+    // logic [31:0]            column_number, row_number,
 
     typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, UPDATE_LOOP } state_t;
 
@@ -44,7 +47,7 @@ module RayGenerator
 
     always_ff @(posedge clk) begin
         if (reset_n) begin
-            state <= IDLE;
+            state <= STALL;
         end else begin
             state <= next_state;
         end
@@ -57,8 +60,8 @@ module RayGenerator
             image_center_x <= 0;
             image_center_y <= 0;
             loop_index <= 0;
-            pixel_x <= 0;
-            pixel_y <= 0;
+            // pixel_x <= 0;
+            // pixel_y <= 0;
         end else begin
             case (state)
                 IDLE: begin
@@ -66,31 +69,46 @@ module RayGenerator
                     ray_dir_x <= 0;
                     ray_dir_y <= 0;
                     ray_dir_z <= 0;
+                    // OLD:
+                    // loop_index <= 1;
                     loop_index <= 1;
                 end 
                 CALCULATE_MU: begin
                     /* verilator lint_off WIDTH */
-                    mu <= distance - camera_pos_z;
+                    // OLD:
+                    // mu <= distance - camera_pos_z;
+
+
+
+
+                    // row_number <= loop_index / image_width;
+                    // column_number <= loop_index % image_width;
+
+
+
+
                     /* verilator lint_on WIDTH */
                 end
                 CALCULATE_IMAGE: begin
                     /* verilator lint_off WIDTH */
-                    image_center_x <= camera_pos_x + mu * camera_dir_x;
-                    image_center_y <= camera_pos_y + mu * camera_dir_y;
+
+                    // OLD:
+                    // image_center_x <= camera_pos_x + mu * camera_dir_x;
+                    // image_center_y <= camera_pos_y + mu * camera_dir_y;
                     /* verilator lint_on WIDTH */
                 end
                 STALL: begin
                 end
                 GENERATE_RAYS: begin
-                        if (loop_index <= image_height * image_width) begin
+                        if (loop_index < image_height * image_width) begin
                             //* verilator lint_off WIDTH */
                             // pixel_x <= image_center_x + (loop_index % image_width) - (image_width / 2);
                             // pixel_y <= image_center_y - (loop_index / image_width) + (image_height / 2) - 1;
                             
-
-                            ray_dir_x <= (image_center_x + (loop_index % image_width) - (image_width / 2)) - camera_pos_x;
-                            ray_dir_y <= (image_center_y - (loop_index / image_width) + (image_height / 2)-1)- camera_pos_y;
-                            ray_dir_z <= distance;
+                            // OLD:
+                            // ray_dir_x <= (image_center_x + (loop_index % image_width) - (image_width / 2)) - camera_pos_x;
+                            // ray_dir_y <= (image_center_y - (loop_index / image_width) + (image_height / 2)-1)- camera_pos_y;
+                            // ray_dir_z <= distance;
 
                             //loop_index <= loop_index + 1;
                             // ray_dir_x <= pixel_x - camera_pos_x;
@@ -98,6 +116,9 @@ module RayGenerator
                             // ray_dir_z <= distance;
                             /* verilator lint_on WIDTH */
 
+                            ray_dir_x <= (camera_right_x * ((loop_index % image_width)-image_width/2)) + (camera_up_x * (image_height/2 - (loop_index / image_width))) + camera_dir_x;
+                            ray_dir_y <= (camera_right_y * ((loop_index % image_width)-image_width/2)) + (camera_up_y * (image_height/2 - (loop_index / image_width))) + camera_dir_y;
+                            ray_dir_z <= (camera_right_z * ((loop_index % image_width)-image_width/2)) + (camera_up_z * (image_height/2 - (loop_index / image_width))) + camera_dir_z;
                         end
                 end
                 UPDATE_LOOP: begin
@@ -132,7 +153,7 @@ module RayGenerator
                 next_state = UPDATE_LOOP;
             end
             UPDATE_LOOP: begin // 5
-                if (loop_index >= image_height * image_width) begin
+                if (loop_index > image_height * image_width) begin
                     // loop_index = 0;
                     next_state = IDLE;
                 end else begin

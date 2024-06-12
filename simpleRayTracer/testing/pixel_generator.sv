@@ -208,14 +208,19 @@ RayTracingUnit ray_tracing_unit (
     .reset(~periph_resetn),
     .cameraDirX(11'd0),  // Assign appropriate values
     .cameraDirY(11'd0),  // Assign appropriate values
-    .cameraDirZ(11'd1),  // Assign appropriate values
+    .cameraDirZ(11'd230),  // Assign appropriate values
     .cameraPosX(11'd250),  // Assign appropriate values
     .cameraPosY(11'd512),  // Assign appropriate values
+    .cameraRightX(11'd1),
+    .cameraRightY(11'd0),
+    .cameraRightZ(11'd0),
+    .cameraUpX(11'd0),
+    .cameraUpY(11'd1),
+    .cameraUpZ(11'd0),
     .cameraPosZ(11'd0),  // Assign appropriate values
     .imageWidth(13'd200), // Assign appropriate values
     .imageHeight(13'd200), // Assign appropriate values
     .ReadyExternal(ready),
-    .cameraDistance(32'd230), // Assign appropriate values
     .validRead(valid_int),
     .lastX(lastx),
     .Sof(first),

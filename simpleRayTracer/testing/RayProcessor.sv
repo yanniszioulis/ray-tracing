@@ -760,22 +760,22 @@ module RayProcessor #(
                     next_state = SHADING_3_INIT;
                 end
             end
-            SHADING_3_INIT: begin
+            SHADING_3_INIT: begin // 24
                 next_state = SHADING_3;
             end
-            SHADING_3: begin // 24
+            SHADING_3: begin // 25
                 next_state = SHADING_4;
             end
-            SHADING_4: begin // 25
+            SHADING_4: begin // 26
                 next_state = OUTPUT_COLOUR_INIT;
             end
-            RAY_OUT_OF_BOUND: begin // 26
+            RAY_OUT_OF_BOUND: begin // 27
                 next_state = OUTPUT_COLOUR_INIT;
             end
-            OUTPUT_COLOUR_INIT: begin
+            OUTPUT_COLOUR_INIT: begin // 28
                 next_state = OUTPUT_COLOUR;
             end
-            OUTPUT_COLOUR: begin // 27
+            OUTPUT_COLOUR: begin // 29
                 valid_data_out = 1;
                 if (ready_external) begin
                     if (loop_index >= image_height * image_width) begin
