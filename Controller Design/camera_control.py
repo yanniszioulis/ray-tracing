@@ -1,6 +1,7 @@
 import pygame
 import sys
 import serial
+import struct
 
 # Initialize pygame
 pygame.init()
@@ -18,10 +19,10 @@ camera_dir_y = 1
 camera_dir_z = 1
 
 # Sensitivity for camera movement
-sensitivity = 1  # Use integer sensitivity for movement
+sensitivity = 5
 
 # Initialize serial connection to FPGA (adjust port and baud rate as needed)
-#ser = serial.Serial('/dev/ttyUSB0', 115200)
+ser = serial.Serial('/dev/ttyUSB0', 115200)
 
 print("Use WASD to move the camera horizontally, SPACE and CTRL to move vertically. Press 'ESC' to exit.")
 
@@ -56,8 +57,13 @@ def update_camera_position(keys):
     # Print updated camera position for debugging
     print(f"Camera Position: X={camera_pos_x}, Y={camera_pos_y}, Z={camera_pos_z} & Camera Direction: X={camera_dir_x}, Y={camera_dir_y}, Z={camera_dir_z}")
 
-    # Send camera position to FPGA
-    #ser.write(f"{camera_pos_x},{camera_pos_y},{camera_pos_z},{camera_dir_x},{camera_dir_y},{camera_dir_z}\n".encode())
+    # Pack camera position and direction into 32-bit values
+    camera_pos = (camera_pos_x << 20) | (camera_pos_y << 10) | camera_pos_z
+    camera_dir = (camera_dir_x << 20) | (camera_dir_y << 10) | camera_dir_z
+
+    # Send camera position and direction to FPGA
+    ser.write(struct.pack('>I', camera_pos))
+    ser.write(struct.pack('>I', camera_dir))
 
 try:
     while True:
@@ -65,6 +71,7 @@ try:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                ser.close()
                 sys.exit()
 
         # Get the state of all keyboard buttons
@@ -79,5 +86,5 @@ try:
 except KeyboardInterrupt:
     print("Exiting...")
     pygame.quit()
-    #ser.close()
+    ser.close()
     sys.exit()
