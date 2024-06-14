@@ -48,6 +48,7 @@ module pixel_buffer (
     // Additional register to keep track of total pixels processed
     logic [$clog2(MAX_CORES*MAX_PIXELS)-1:0] total_pixels_processed;
     // Sequential logic to update state and buffer
+    // Sequential logic to update state and buffer
     always @(posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
             state <= IDLE;
@@ -85,9 +86,10 @@ module pixel_buffer (
             // Shifting buffer if pixel is written to packer
             if (state == WRITE_PIXEL && in_stream_ready) begin
                 pixel_buffer_valid[current_pixel] <= 1'b0;
-                current_pixel <= current_pixel + 1;
                 if (current_pixel == no_of_extra_cores) begin
                     current_pixel <= 'b0;
+                end else begin
+                    current_pixel <= current_pixel + 1;
                 end
             end
         end
@@ -136,4 +138,3 @@ module pixel_buffer (
     end
 
 endmodule
-
