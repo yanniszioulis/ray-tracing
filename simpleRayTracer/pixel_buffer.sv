@@ -137,4 +137,3 @@ module pixel_buffer (
 
 endmodule
 
-endmodule
