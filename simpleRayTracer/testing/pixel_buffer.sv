@@ -46,6 +46,7 @@ reg [3:0] valid_buf; // Keeps track of which slots in the buffer are valid
 reg core_en1, core_en2, core_en3, core_en4;
 // Current pixel sequence number to be written next
 reg [1:0] current_pixel;
+reg [1:0] next_pixel;
 reg [2:0] core_num;
 
 assign core_num = no_of_extra_cores + 3'b001;
@@ -86,9 +87,9 @@ always @(posedge aclk or negedge aresetn) begin
         end
 
         // Shifting buffer if pixel is written to packer
-        if (next_state == WRITE_PIXEL && in_stream_ready) begin
+        if (state == WRITE_PIXEL && in_stream_ready) begin
             valid_buf[current_pixel] <= 1'b0;
-            current_pixel <= (current_pixel + 1) % core_num;
+            current_pixel <= next_pixel; // Update current_pixel with next_pixel value
         end
     end
 end
@@ -108,6 +109,9 @@ always_comb begin
     core_en2 = 1'b0;
     core_en3 = 1'b0;
     core_en4 = 1'b0;
+    next_pixel = current_pixel; // Default to current_pixel
+
+    // Determine which cores are enabled
     if (no_of_extra_cores >= 3'b000) begin
         core_en1 = 1'b1;
     end
@@ -120,18 +124,18 @@ always_comb begin
     if (no_of_extra_cores >= 3'b011) begin
         core_en4 = 1'b1;
     end
+
     case (state)
         IDLE: begin
             if (valid_buf[current_pixel]) begin
                 next_state = WRITE_PIXEL;
-            end else if (!valid_buf[0] && current_pixel == 2'b00 && core_en1 == 1'b1) begin
-                next_state = WAIT_FOR_1;
-            end else if (!valid_buf[1] && current_pixel == 2'b01 && core_en2 == 1'b1) begin
-                next_state = WAIT_FOR_2;
-            end else if (!valid_buf[2] && current_pixel == 2'b10 && core_en3 == 1'b1) begin
-                next_state = WAIT_FOR_3;
-            end else if (!valid_buf[3] && current_pixel == 2'b11 && core_en4 == 1'b1) begin
-                next_state = WAIT_FOR_4;
+            end else begin
+                case (current_pixel)
+                    2'b00: if (core_en1) next_state = WAIT_FOR_1;
+                    2'b01: if (core_en2) next_state = WAIT_FOR_2;
+                    2'b10: if (core_en3) next_state = WAIT_FOR_3;
+                    2'b11: if (core_en4) next_state = WAIT_FOR_4;
+                endcase
             end
         end
 
@@ -169,13 +173,14 @@ always_comb begin
                 out_g = g_buf[current_pixel];
                 out_b = b_buf[current_pixel];
                 out_valid = 1'b1;
+                next_pixel = (current_pixel + 1) % core_num[1:0]; // Update next_pixel
                 next_state = IDLE;
             end
         end
+
         default: begin
             next_state = IDLE;
         end
-
     endcase
 end
 
