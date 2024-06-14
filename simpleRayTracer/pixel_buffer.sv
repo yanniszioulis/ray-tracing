@@ -48,6 +48,10 @@ module pixel_buffer (
     // Additional register to keep track of total pixels processed
     logic [$clog2(MAX_CORES*MAX_PIXELS)-1:0] total_pixels_processed;
     // Sequential logic to update state and buffer
+module pixel_buffer (
+    // ... (module definition and parameters remain the same)
+
+    // Sequential logic to update state and buffer
     always @(posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
             state <= IDLE;
@@ -57,25 +61,25 @@ module pixel_buffer (
             state <= next_state;
 
             // Latching valid input pixels into buffer
-            if (valid1) begin
+            if (valid1 && current_pixel == 0) begin
                 pixel_buffer_r[0] <= r1;
                 pixel_buffer_g[0] <= g1;
                 pixel_buffer_b[0] <= b1;
                 pixel_buffer_valid[0] <= 1'b1;
             end
-            if (valid2) begin
+            if (valid2 && current_pixel == 1) begin
                 pixel_buffer_r[1] <= r2;
                 pixel_buffer_g[1] <= g2;
                 pixel_buffer_b[1] <= b2;
                 pixel_buffer_valid[1] <= 1'b1;
             end
-            if (valid3) begin
+            if (valid3 && current_pixel == 2) begin
                 pixel_buffer_r[2] <= r3;
                 pixel_buffer_g[2] <= g3;
                 pixel_buffer_b[2] <= b3;
                 pixel_buffer_valid[2] <= 1'b1;
             end
-            if (valid4) begin
+            if (valid4 && current_pixel == 3) begin
                 pixel_buffer_r[3] <= r4;
                 pixel_buffer_g[3] <= g4;
                 pixel_buffer_b[3] <= b4;
