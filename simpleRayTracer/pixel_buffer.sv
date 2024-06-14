@@ -111,10 +111,10 @@ module pixel_buffer (
                     next_state = WRITE_PIXEL;
                 end else begin
                     case (current_pixel)
-                        0: compute_ready_1 = 1'b1;
-                        1: compute_ready_2 = 1'b1;
-                        2: compute_ready_3 = 1'b1;
-                        3: compute_ready_4 = 1'b1;
+                        0: compute_ready_1 = ~pixel_buffer_valid[0];
+                        1: compute_ready_2 = ~pixel_buffer_valid[1];
+                        2: compute_ready_3 = ~pixel_buffer_valid[2];
+                        3: compute_ready_4 = ~pixel_buffer_valid[3];
                     endcase
                 end
             end
