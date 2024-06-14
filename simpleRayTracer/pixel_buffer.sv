@@ -48,10 +48,6 @@ module pixel_buffer (
     // Additional register to keep track of total pixels processed
     logic [$clog2(MAX_CORES*MAX_PIXELS)-1:0] total_pixels_processed;
     // Sequential logic to update state and buffer
-module pixel_buffer (
-    // ... (module definition and parameters remain the same)
-
-    // Sequential logic to update state and buffer
     always @(posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
             state <= IDLE;
