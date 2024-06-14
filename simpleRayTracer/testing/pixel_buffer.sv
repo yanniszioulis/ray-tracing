@@ -49,6 +49,7 @@ reg [1:0] current_pixel;
 reg [2:0] core_num;
 
 assign core_num = no_of_extra_cores + 3'b001;
+
 // Sequential logic to update state and buffer
 always @(posedge aclk or negedge aresetn) begin
     if (!aresetn) begin
@@ -87,7 +88,7 @@ always @(posedge aclk or negedge aresetn) begin
         // Shifting buffer if pixel is written to packer
         if (next_state == WRITE_PIXEL && in_stream_ready) begin
             valid_buf[current_pixel] <= 1'b0;
-            current_pixel <= ((current_pixel + 1) % core_num);
+            current_pixel <= (current_pixel + 1) % core_num;
         end
     end
 end
@@ -107,22 +108,16 @@ always_comb begin
     core_en2 = 1'b0;
     core_en3 = 1'b0;
     core_en4 = 1'b0;
-    if (no_of_extra_cores == 3'b000) begin
+    if (no_of_extra_cores >= 3'b000) begin
         core_en1 = 1'b1;
     end
-    else if (no_of_extra_cores == 3'b001) begin
-        core_en1 = 1'b1;
+    if (no_of_extra_cores >= 3'b001) begin
         core_en2 = 1'b1;
     end
-    else if (no_of_extra_cores == 3'b010) begin
-        core_en1 = 1'b1;
-        core_en2 = 1'b1;
+    if (no_of_extra_cores >= 3'b010) begin
         core_en3 = 1'b1;
     end
-    else if (no_of_extra_cores == 3'b011) begin
-        core_en1 = 1'b1;
-        core_en2 = 1'b1;
-        core_en3 = 1'b1;
+    if (no_of_extra_cores >= 3'b011) begin
         core_en4 = 1'b1;
     end
     case (state)
