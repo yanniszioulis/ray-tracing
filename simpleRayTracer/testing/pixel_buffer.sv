@@ -29,10 +29,7 @@ module pixel_buffer(
 // State machine states
 typedef enum logic [2:0] {
     IDLE,
-    WAIT_FOR_1,
-    WAIT_FOR_2,
-    WAIT_FOR_3,
-    WAIT_FOR_4,
+    WAIT_FOR_PIXEL,
     WRITE_PIXEL
 } state_t;
 
@@ -43,13 +40,9 @@ reg [7:0] r_buf[3:0];
 reg [7:0] g_buf[3:0];
 reg [7:0] b_buf[3:0];
 reg [3:0] valid_buf; // Keeps track of which slots in the buffer are valid
-reg core_en1, core_en2, core_en3, core_en4;
+
 // Current pixel sequence number to be written next
 reg [1:0] current_pixel;
-reg [1:0] next_pixel;
-reg [2:0] core_num;
-
-assign core_num = no_of_extra_cores + 3'b001;
 
 // Sequential logic to update state and buffer
 always @(posedge aclk or negedge aresetn) begin
@@ -57,38 +50,39 @@ always @(posedge aclk or negedge aresetn) begin
         state <= IDLE;
         valid_buf <= 4'b0000;
         current_pixel <= 2'b00; // Start with the first pixel
-        next_pixel <= 2'b00;
     end else begin
         state <= next_state;
 
-        // Latching valid input pixels into buffer, ensuring only one pixel is latched
+        // Latching valid input pixels into buffer
         if (valid1 && !valid_buf[0]) begin
             r_buf[0] <= r1;
             g_buf[0] <= g1;
             b_buf[0] <= b1;
             valid_buf[0] <= 1'b1;
-        end else if (valid2 && !valid_buf[1]) begin
+        end
+        if (valid2 && !valid_buf[1]) begin
             r_buf[1] <= r2;
             g_buf[1] <= g2;
             b_buf[1] <= b2;
             valid_buf[1] <= 1'b1;
-        end else if (valid3 && !valid_buf[2]) begin
+        end
+        if (valid3 && !valid_buf[2]) begin
             r_buf[2] <= r3;
             g_buf[2] <= g3;
             b_buf[2] <= b3;
             valid_buf[2] <= 1'b1;
-        end else if (valid4 && !valid_buf[3]) begin
+        end
+        if (valid4 && !valid_buf[3]) begin
             r_buf[3] <= r4;
             g_buf[3] <= g4;
             b_buf[3] <= b4;
             valid_buf[3] <= 1'b1;
         end
 
-        // Shifting buffer if pixel is written to packer
+        // Shifting buffer if pixel is written to output
         if (state == WRITE_PIXEL && in_stream_ready) begin
             valid_buf[current_pixel] <= 1'b0;
-            current_pixel <= next_pixel; // Update current_pixel first
-            next_pixel <= (current_pixel + 1) % core_num; // Calculate next_pixel based on the updated current_pixel
+            current_pixel <= (current_pixel + 1) % 4;
         end
     end
 end
@@ -104,65 +98,25 @@ always_comb begin
     out_r = 8'h00;
     out_g = 8'h00;
     out_b = 8'h00;
-    core_en1 = 1'b0;
-    core_en2 = 1'b0;
-    core_en3 = 1'b0;
-    core_en4 = 1'b0;
-
-    // Determine which cores are enabled
-    if (no_of_extra_cores >= 3'b000) begin
-        core_en1 = 1'b1;
-    end
-    if (no_of_extra_cores >= 3'b001) begin
-        core_en2 = 1'b1;
-    end
-    if (no_of_extra_cores >= 3'b010) begin
-        core_en3 = 1'b1;
-    end
-    if (no_of_extra_cores >= 3'b011) begin
-        core_en4 = 1'b1;
-    end
 
     case (state)
         IDLE: begin
             if (valid_buf[current_pixel]) begin
                 next_state = WRITE_PIXEL;
             end else begin
-                case (current_pixel)
-                    2'b00: if (core_en1) next_state = WAIT_FOR_1;
-                    2'b01: if (core_en2) next_state = WAIT_FOR_2;
-                    2'b10: if (core_en3) next_state = WAIT_FOR_3;
-                    2'b11: if (core_en4) next_state = WAIT_FOR_4;
-                endcase
+                next_state = WAIT_FOR_PIXEL;
             end
         end
 
-        WAIT_FOR_1: begin
-            if (valid_buf[0]) begin
+        WAIT_FOR_PIXEL: begin
+            if (valid_buf[0] || valid_buf[1] || valid_buf[2] || valid_buf[3]) begin
                 next_state = WRITE_PIXEL;
             end
-            compute_ready_1 = 1'b1; // Signal ray tracing unit 1 to start computing next pixel
-        end
-
-        WAIT_FOR_2: begin
-            if (valid_buf[1]) begin
-                next_state = WRITE_PIXEL;
-            end
-            compute_ready_2 = 1'b1; // Signal ray tracing unit 2 to start computing next pixel
-        end
-
-        WAIT_FOR_3: begin
-            if (valid_buf[2]) begin
-                next_state = WRITE_PIXEL;
-            end
-            compute_ready_3 = 1'b1; // Signal ray tracing unit 3 to start computing next pixel
-        end
-
-        WAIT_FOR_4: begin
-            if (valid_buf[3]) begin
-                next_state = WRITE_PIXEL;
-            end
-            compute_ready_4 = 1'b1; // Signal ray tracing unit 4 to start computing next pixel
+            // Signal ray tracing units to start computing next pixel
+            if (!valid_buf[0]) compute_ready_1 = 1'b1;
+            if (!valid_buf[1]) compute_ready_2 = 1'b1;
+            if (!valid_buf[2]) compute_ready_3 = 1'b1;
+            if (!valid_buf[3]) compute_ready_4 = 1'b1;
         end
 
         WRITE_PIXEL: begin
