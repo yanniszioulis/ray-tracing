@@ -1,29 +1,29 @@
 module pixel_buffer(
-    input logic aclk,
-    input logic aresetn,
+    input aclk,
+    input aresetn,
 
-    input logic [7:0] r1, g1, b1,
-    input logic [7:0] r2, g2, b2,
-    input logic [7:0] r3, g3, b3,
-    input logic [7:0] r4, g4, b4,
+    input [7:0] r1, g1, b1,
+    input [7:0] r2, g2, b2,
+    input [7:0] r3, g3, b3,
+    input [7:0] r4, g4, b4,
 
-    input logic valid1,
-    input logic valid2,
-    input logic valid3,
-    input logic valid4,
-    input logic [2:0] no_of_extra_cores,
+    input valid1,
+    input valid2,
+    input valid3,
+    input valid4,
+    input [2:0] no_of_extra_cores,
 
-    output logic compute_ready_1,
-    output logic compute_ready_2,
-    output logic compute_ready_3,
-    output logic compute_ready_4,
+    output reg compute_ready_1,
+    output reg compute_ready_2,
+    output reg compute_ready_3,
+    output reg compute_ready_4,
 
-    input logic in_stream_ready,
+    input in_stream_ready,
 
-    output logic [7:0] out_r,
-    output logic [7:0] out_g,
-    output logic [7:0] out_b,
-    output logic out_valid
+    output reg [7:0] out_r,
+    output reg [7:0] out_g,
+    output reg [7:0] out_b,
+    output reg out_valid
 );
 
 // State machine states
@@ -39,20 +39,20 @@ typedef enum logic [2:0] {
 state_t state, next_state;
 
 // Buffer to store incoming pixels
-logic [7:0] r_buf[3:0];
-logic [7:0] g_buf[3:0];
-logic [7:0] b_buf[3:0];
-logic [3:0] valid_buf; // Keeps track of which slots in the buffer are valid
-logic core_en1, core_en2, core_en3, core_en4;
+reg [7:0] r_buf[3:0];
+reg [7:0] g_buf[3:0];
+reg [7:0] b_buf[3:0];
+reg [3:0] valid_buf; // Keeps track of which slots in the buffer are valid
+reg core_en1, core_en2, core_en3, core_en4;
 // Current pixel sequence number to be written next
-logic [1:0] current_pixel;
-logic [1:0] next_pixel;
-logic [2:0] core_num;
+reg [1:0] current_pixel;
+reg [1:0] next_pixel;
+reg [2:0] core_num;
 
 assign core_num = no_of_extra_cores + 3'b001;
 
 // Sequential logic to update state and buffer
-always_ff @(posedge aclk) begin
+always @(posedge aclk or negedge aresetn) begin
     if (!aresetn) begin
         state <= IDLE;
         valid_buf <= 4'b0000;
@@ -88,36 +88,12 @@ always_ff @(posedge aclk) begin
 
         // Shifting buffer if pixel is written to packer
         if (state == WRITE_PIXEL && in_stream_ready) begin
-            valid_buf[next_pixel] <= 1'b0;
-            // current_pixel <= next_pixel; // Update current_pixel with next_pixel value
+            valid_buf[current_pixel] <= 1'b0;
+            next_pixel = (current_pixel + 1) % core_num[1:0];
+            current_pixel <= next_pixel; // Update current_pixel with next_pixel value
         end
     end
 end
-
-// always_ff @(posedge aclk) begin
-//     if(!aresetn) begin
-//         state <= WAIT_FOR_1;
-//     end else begin
-//             state <= next_state;
-//         end
-// end
-
-// always_ff @(posedge @aclk) begin
-//     case (state)
-//         WAIT_FOR_1: begin
-
-//         end
-//         WAIT_FOR_2: begin
-
-//         end
-//         WAIT_FOR_3: begin
-
-//         end
-//         WAIT_FOR_4: begin
-
-//         end
-//     endcase
-// end
 
 // Combinational logic for state transitions and output assignments
 always_comb begin
@@ -134,7 +110,6 @@ always_comb begin
     core_en2 = 1'b0;
     core_en3 = 1'b0;
     core_en4 = 1'b0;
-    next_pixel = current_pixel; // Default to current_pixel
 
     // Determine which cores are enabled
     if (no_of_extra_cores >= 3'b000) begin
@@ -198,7 +173,6 @@ always_comb begin
                 out_g = g_buf[current_pixel];
                 out_b = b_buf[current_pixel];
                 out_valid = 1'b1;
-                next_pixel = (current_pixel + 1) % core_num[1:0]; // Update next_pixel
                 next_state = IDLE;
             end
         end
