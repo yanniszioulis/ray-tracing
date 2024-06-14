@@ -39,9 +39,18 @@ bool withinAABB(vector<int> position, vector<int> aabb_min, vector<int> aabb_max
     return position[0] >= aabb_min[0] && position[1] >= aabb_min[1] && position[2] >= aabb_min[2] && position[0] <= aabb_max[0] && position[1] <= aabb_max[1] && position[2] <= aabb_max[2];
 }
 
-bool justOutsideAABB(vector<int> position, vector<int> aabb_min, vector<int> aabb_max){
-    return position[0] == aabb_min[0] - 1 || position[1] == aabb_min[1] - 1 || position[2] == aabb_min[2] - 1 || position[0] == aabb_max[0] + 1 || position[1] == aabb_max[1] + 1 || position[2] == aabb_max[2] + 1;
+bool justOutsideAABB(vector<int> position, vector<int> aabb_min, vector<int> aabb_max) {
+    bool outside_x = (position[0] == aabb_min[0] - 1 || position[0] == aabb_max[0] + 1);
+    bool outside_y = (position[1] == aabb_min[1] - 1 || position[1] == aabb_max[1] + 1);
+    bool outside_z = (position[2] == aabb_min[2] - 1 || position[2] == aabb_max[2] + 1);
+
+    bool within_x = (position[0] >= aabb_min[0] && position[0] <= aabb_max[0]);
+    bool within_y = (position[1] >= aabb_min[1] && position[1] <= aabb_max[1]);
+    bool within_z = (position[2] >= aabb_min[2] && position[2] <= aabb_max[2]);
+
+    return (outside_x && within_y && within_z) || (within_x && outside_y && within_z) || (within_x && within_y && outside_z) || (outside_x && outside_y && within_z) || (outside_x && within_y && outside_z) || (within_x && outside_y && outside_z) || (outside_x && outside_y && outside_z);
 }
+
 
 tuple<bitset<32>, int, vector<int>, vector<int>> traverseTree(vector<int> ray_pos, int oct_size, vector<int> aabb_min, vector<int> aabb_max){
     int depth = 0;
@@ -90,9 +99,17 @@ vector<int> stepRay(vector<int> ray_pos, vector<int> ray_dir, int oct_size, vect
         temp_pos[1] = temp_pos[1] + ray_dir[1];
         temp_pos[2] = temp_pos[2] + ray_dir[2];
         if(withinAABB(temp_pos, aabb_min, aabb_max) || justOutsideAABB(temp_pos, aabb_min, aabb_max)){
-            //cout << "updating position" << endl;
+            // cout << "updating position" << endl;
             ray_pos = temp_pos;
         }
+        // cout << "x pos: " << temp_pos[0] << endl;
+        // cout << "y pos: " << temp_pos[1] << endl;
+        // cout << "z pos: " << temp_pos[2] << endl;
+
+        // cout << "x dir: " << ray_dir[0] << endl;
+        // cout << "y dir: " << ray_dir[1] << endl;
+        // cout << "z dir: " << ray_dir[2] << endl;
+
         ray_dir[0] = (abs(ray_dir[0])<=1) ? (ray_dir[0]>=0 ? 1 : -1) : ray_dir[0]/2;
         ray_dir[1] = (abs(ray_dir[1])<=1) ? (ray_dir[1]>=0 ? 1 : -1)  : ray_dir[1]/2;
         ray_dir[2] = (abs(ray_dir[2])<=1) ? (ray_dir[2]>=0 ? 1 : -1)  : ray_dir[2]/2;
@@ -125,9 +142,9 @@ int main(){
             int centered_x = x - (im_width / 2);
             int centered_y = (im_height / 2) - y;
             vector<int> ray_dir = cam_norm;
-            ray_dir[0] += centered_x*cam_right[0] + centered_y*cam_up[0];
-            ray_dir[1] += centered_x*cam_right[1] + centered_y*cam_up[1];
-            ray_dir[2] += centered_x*cam_right[2] + centered_y*cam_up[2];
+            ray_dir[0] += (centered_x*cam_right[0] + centered_y*cam_up[0]);
+            ray_dir[1] += (centered_x*cam_right[1] + centered_y*cam_up[1]);
+            ray_dir[2] += (centered_x*cam_right[2] + centered_y*cam_up[2]);
             vector<int> ray_pos = cam_pos;
 
             int world_size = pow(2, coord_bit_length);
