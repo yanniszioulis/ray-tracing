@@ -11,6 +11,7 @@ module pixel_buffer(
     input valid2,
     input valid3,
     input valid4,
+    input [2:0] no_of_extra_cores,
 
     output reg compute_ready_1,
     output reg compute_ready_2,
@@ -42,10 +43,12 @@ reg [7:0] r_buf[3:0];
 reg [7:0] g_buf[3:0];
 reg [7:0] b_buf[3:0];
 reg [3:0] valid_buf; // Keeps track of which slots in the buffer are valid
-
+reg core_en1, core_en2, core_en3, core_en4;
 // Current pixel sequence number to be written next
 reg [1:0] current_pixel;
+reg [2:0] core_num;
 
+assign core_num = no_of_extra_cores + 3'b001;
 // Sequential logic to update state and buffer
 always @(posedge aclk or negedge aresetn) begin
     if (!aresetn) begin
@@ -84,7 +87,7 @@ always @(posedge aclk or negedge aresetn) begin
         // Shifting buffer if pixel is written to packer
         if (next_state == WRITE_PIXEL && in_stream_ready) begin
             valid_buf[current_pixel] <= 1'b0;
-            current_pixel <= current_pixel + 1;
+            current_pixel <= ((current_pixel + 1) % core_num);
         end
     end
 end
@@ -100,18 +103,39 @@ always_comb begin
     out_r = 8'h00;
     out_g = 8'h00;
     out_b = 8'h00;
-
+    core_en1 = 1'b0;
+    core_en2 = 1'b0;
+    core_en3 = 1'b0;
+    core_en4 = 1'b0;
+    if (no_of_extra_cores == 3'b000) begin
+        core_en1 = 1'b1;
+    end
+    else if (no_of_extra_cores == 3'b001) begin
+        core_en1 = 1'b1;
+        core_en2 = 1'b1;
+    end
+    else if (no_of_extra_cores == 3'b010) begin
+        core_en1 = 1'b1;
+        core_en2 = 1'b1;
+        core_en3 = 1'b1;
+    end
+    else if (no_of_extra_cores == 3'b011) begin
+        core_en1 = 1'b1;
+        core_en2 = 1'b1;
+        core_en3 = 1'b1;
+        core_en4 = 1'b1;
+    end
     case (state)
         IDLE: begin
             if (valid_buf[current_pixel]) begin
                 next_state = WRITE_PIXEL;
-            end else if (!valid_buf[0] && current_pixel == 2'b00) begin
+            end else if (!valid_buf[0] && current_pixel == 2'b00 && core_en1 == 1'b1) begin
                 next_state = WAIT_FOR_1;
-            end else if (!valid_buf[1] && current_pixel == 2'b01) begin
+            end else if (!valid_buf[1] && current_pixel == 2'b01 && core_en2 == 1'b1) begin
                 next_state = WAIT_FOR_2;
-            end else if (!valid_buf[2] && current_pixel == 2'b10) begin
+            end else if (!valid_buf[2] && current_pixel == 2'b10 && core_en3 == 1'b1) begin
                 next_state = WAIT_FOR_3;
-            end else if (!valid_buf[3] && current_pixel == 2'b11) begin
+            end else if (!valid_buf[3] && current_pixel == 2'b11 && core_en4 == 1'b1) begin
                 next_state = WAIT_FOR_4;
             end
         end
