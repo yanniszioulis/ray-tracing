@@ -57,29 +57,27 @@ always @(posedge aclk or negedge aresetn) begin
         state <= IDLE;
         valid_buf <= 4'b0000;
         current_pixel <= 2'b00; // Start with the first pixel
+        next_pixel <= 2'b00;
     end else begin
         state <= next_state;
 
-        // Latching valid input pixels into buffer
+        // Latching valid input pixels into buffer, ensuring only one pixel is latched
         if (valid1 && !valid_buf[0]) begin
             r_buf[0] <= r1;
             g_buf[0] <= g1;
             b_buf[0] <= b1;
             valid_buf[0] <= 1'b1;
-        end
-        if (valid2 && !valid_buf[1]) begin
+        end else if (valid2 && !valid_buf[1]) begin
             r_buf[1] <= r2;
             g_buf[1] <= g2;
             b_buf[1] <= b2;
             valid_buf[1] <= 1'b1;
-        end
-        if (valid3 && !valid_buf[2]) begin
+        end else if (valid3 && !valid_buf[2]) begin
             r_buf[2] <= r3;
             g_buf[2] <= g3;
             b_buf[2] <= b3;
             valid_buf[2] <= 1'b1;
-        end
-        if (valid4 && !valid_buf[3]) begin
+        end else if (valid4 && !valid_buf[3]) begin
             r_buf[3] <= r4;
             g_buf[3] <= g4;
             b_buf[3] <= b4;
@@ -89,7 +87,8 @@ always @(posedge aclk or negedge aresetn) begin
         // Shifting buffer if pixel is written to packer
         if (state == WRITE_PIXEL && in_stream_ready) begin
             valid_buf[current_pixel] <= 1'b0;
-            current_pixel <= next_pixel; // Update current_pixel with next_pixel value
+            current_pixel <= next_pixel; // Update current_pixel first
+            next_pixel <= (current_pixel + 1) % core_num; // Calculate next_pixel based on the updated current_pixel
         end
     end
 end
@@ -109,7 +108,6 @@ always_comb begin
     core_en2 = 1'b0;
     core_en3 = 1'b0;
     core_en4 = 1'b0;
-    next_pixel = current_pixel; // Default to current_pixel
 
     // Determine which cores are enabled
     if (no_of_extra_cores >= 3'b000) begin
@@ -173,7 +171,6 @@ always_comb begin
                 out_g = g_buf[current_pixel];
                 out_b = b_buf[current_pixel];
                 out_valid = 1'b1;
-                next_pixel = (current_pixel + 1) % core_num[1:0]; // Update next_pixel
                 next_state = IDLE;
             end
         end
