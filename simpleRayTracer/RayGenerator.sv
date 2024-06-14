@@ -39,7 +39,7 @@ module RayGenerator
                     ray_dir_x <= 0;
                     ray_dir_y <= 0;
                     ray_dir_z <= 0;
-                    loop_index <= core_number;
+                    loop_index <= core_number + 3;
                     number_of_cores <= op_code + 1;
                 end 
                 CALCULATE_MU: begin

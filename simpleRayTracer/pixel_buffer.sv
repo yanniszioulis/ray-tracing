@@ -36,7 +36,6 @@ module pixel_buffer (
 
     // Buffer to store incoming pixels
     localparam MAX_CORES = 4;
-    localparam MAX_PIXELS = 1024;
     logic [7:0] pixel_buffer_r[MAX_CORES-1:0];
     logic [7:0] pixel_buffer_g[MAX_CORES-1:0];
     logic [7:0] pixel_buffer_b[MAX_CORES-1:0];
@@ -46,7 +45,6 @@ module pixel_buffer (
     logic [$clog2(MAX_CORES)-1:0] current_pixel;
 
     // Additional register to keep track of total pixels processed
-    logic [$clog2(MAX_CORES*MAX_PIXELS)-1:0] total_pixels_processed;
     // Sequential logic to update state and buffer
     // Sequential logic to update state and buffer
     always @(posedge aclk or negedge aresetn) begin
