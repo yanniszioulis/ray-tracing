@@ -3,8 +3,8 @@ module octant_rom #(
                 DATA_WIDTH = 32
 )(
     input   logic                       clk,
-    input   logic   [ADDRESS_WIDTH-1:0] addr1,
-    output  logic   [DATA_WIDTH-1:0]    dout1,
+    input   logic   [ADDRESS_WIDTH-1:0] addr1, addr2, addr3, addr4,
+    output  logic   [DATA_WIDTH-1:0]    dout1, dout2, dout3, dout4,
     input   logic                       ren
 );
 
@@ -19,6 +19,9 @@ end;
 always_ff @(posedge clk) begin
     if(ren) begin
         dout1 <= rom_array[addr1];
+        dout2 <= rom_array[addr2];
+        dout3 <= rom_array[addr3];
+        dout4 <= rom_array[addr4];
     end
 end
 

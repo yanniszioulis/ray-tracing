@@ -69,9 +69,9 @@ int main(int argc, char** argv, char** env) {
             // Evaluate the model
             top->eval();
             if (top->clk && top->validRead) { // Check at the positive edge and if validRead is high
-                ppmfile << static_cast<int>(top->red) << " "
-                        << static_cast<int>(top->green) << " "
-                        << static_cast<int>(top->blue) << "\n";
+                ppmfile << static_cast<int>(top->out_red) << " "
+                        << static_cast<int>(top->out_green) << " "
+                        << static_cast<int>(top->out_blue) << "\n";
                 pixels ++;
                 if (top->lastX)
                 {

@@ -1,16 +1,20 @@
 module RayGenerator
 (
-    input logic             clk, reset_n, ready_internal, ready_external,
+    input logic             clk, reset_n, ready_internal, ready_external, en,
     input logic [10:0]      camera_pos_x, camera_pos_y, camera_pos_z,
     input logic [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
     input logic [10:0]      camera_right_x, camera_right_y, camera_right_z,
     input logic [10:0]      camera_up_x, camera_up_y, camera_up_z,
     input logic [12:0]      image_width, image_height,
+
+    input logic [2:0]       core_number, 
+    input logic [1:0]       op_code,
+
     output logic [31:0]     ray_dir_x, ray_dir_y, ray_dir_z,
     output logic [31:0]     loop_index
-
 );
 
+    logic [2:0]             number_of_cores;
 
     typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, UPDATE_LOOP } state_t;
 
@@ -35,7 +39,8 @@ module RayGenerator
                     ray_dir_x <= 0;
                     ray_dir_y <= 0;
                     ray_dir_z <= 0;
-                    loop_index <= 1;
+                    loop_index <= core_number;
+                    number_of_cores <= op_code + 1;
                 end 
                 CALCULATE_MU: begin
                     // OLD
@@ -54,7 +59,7 @@ module RayGenerator
                         end
                 end
                 UPDATE_LOOP: begin
-                    loop_index <= loop_index + 1;
+                    loop_index <= loop_index + number_of_cores;
                 end
             endcase
         end
@@ -64,7 +69,11 @@ module RayGenerator
         next_state = state;
         case (state)
             IDLE: begin // 0
-                next_state = CALCULATE_MU;
+                if (en) begin
+                    next_state = CALCULATE_MU;
+                end else begin
+                    next_state = IDLE;
+                end
             end
             CALCULATE_MU: begin // 1
                 next_state = CALCULATE_IMAGE;
