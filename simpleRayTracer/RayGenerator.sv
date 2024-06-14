@@ -1,102 +1,136 @@
-module RayGenerator
-(
-    input logic             clk, reset_n, ready_internal, ready_external, en,
-    input logic [10:0]      camera_pos_x, camera_pos_y, camera_pos_z,
-    input logic [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
-    input logic [10:0]      camera_right_x, camera_right_y, camera_right_z,
-    input logic [10:0]      camera_up_x, camera_up_y, camera_up_z,
-    input logic [12:0]      image_width, image_height,
+module pixel_buffer (
+    input logic aclk,
+    input logic aresetn,
 
-    input logic [2:0]       core_number, 
-    input logic [1:0]       op_code,
+    input logic [7:0] r1, g1, b1,
+    input logic [7:0] r2, g2, b2,
+    input logic [7:0] r3, g3, b3,
+    input logic [7:0] r4, g4, b4,
 
-    output logic [31:0]     ray_dir_x, ray_dir_y, ray_dir_z,
-    output logic [31:0]     loop_index
+    input logic valid1,
+    input logic valid2,
+    input logic valid3,
+    input logic valid4,
+    input logic [2:0] no_of_extra_cores,
+
+    output logic compute_ready_1,
+    output logic compute_ready_2,
+    output logic compute_ready_3,
+    output logic compute_ready_4,
+
+    input logic in_stream_ready,
+
+    output logic [7:0] out_r,
+    output logic [7:0] out_g,
+    output logic [7:0] out_b,
+    output logic out_valid
 );
 
-    logic [2:0]             number_of_cores;
-
-    typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, UPDATE_LOOP } state_t;
+    // State machine states
+    typedef enum logic [2:0] {
+        IDLE,
+        WRITE_PIXEL
+    } state_t;
 
     state_t state, next_state;
 
-    always_ff @(posedge clk) begin
-        if (!reset_n) begin
+    // Buffer to store incoming pixels
+    localparam MAX_CORES = 4;
+    localparam MAX_PIXELS = 1024;
+    logic [7:0] pixel_buffer_r[MAX_CORES-1:0];
+    logic [7:0] pixel_buffer_g[MAX_CORES-1:0];
+    logic [7:0] pixel_buffer_b[MAX_CORES-1:0];
+    logic [MAX_CORES-1:0] pixel_buffer_valid;
+
+    // Current pixel index to be written next
+    logic [$clog2(MAX_CORES)-1:0] current_pixel;
+
+    // Additional register to keep track of total pixels processed
+    logic [$clog2(MAX_CORES*MAX_PIXELS)-1:0] total_pixels_processed;
+
+    // Sequential logic to update state and buffer
+    always @(posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
             state <= IDLE;
+            pixel_buffer_valid <= 'b0;
+            current_pixel <= 'b0;
+            total_pixels_processed <= 'b0;
         end else begin
             state <= next_state;
-        end
-        
-    end
 
-    always_ff @(posedge clk) begin
-        if (!reset_n) begin
-            loop_index <= 0;
+            // Latching valid input pixels into buffer
+            if (valid1) begin
+                pixel_buffer_r[0] <= r1;
+                pixel_buffer_g[0] <= g1;
+                pixel_buffer_b[0] <= b1;
+                pixel_buffer_valid[0] <= 1'b1;
+            end
+            if (valid2) begin
+                pixel_buffer_r[1] <= r2;
+                pixel_buffer_g[1] <= g2;
+                pixel_buffer_b[1] <= b2;
+                pixel_buffer_valid[1] <= 1'b1;
+            end
+            if (valid3) begin
+                pixel_buffer_r[2] <= r3;
+                pixel_buffer_g[2] <= g3;
+                pixel_buffer_b[2] <= b3;
+                pixel_buffer_valid[2] <= 1'b1;
+            end
+            if (valid4) begin
+                pixel_buffer_r[3] <= r4;
+                pixel_buffer_g[3] <= g4;
+                pixel_buffer_b[3] <= b4;
+                pixel_buffer_valid[3] <= 1'b1;
+            end
 
-        end else begin
-            case (state)
-                IDLE: begin
-                    ray_dir_x <= 0;
-                    ray_dir_y <= 0;
-                    ray_dir_z <= 0;
-                    loop_index <= core_number;
-                    number_of_cores <= op_code + 1;
-                end 
-                CALCULATE_MU: begin
-                    // OLD
-                end
-                CALCULATE_IMAGE: begin
-                    // OLD
-                end
-                STALL: begin
-                end
-                GENERATE_RAYS: begin
-                        if (loop_index < image_height * image_width) begin
-
-                            ray_dir_x <= (camera_right_x * ((loop_index % image_width)-image_width/2)) + (camera_up_x * (image_height/2 - (loop_index / image_width))) + camera_dir_x;
-                            ray_dir_y <= (camera_right_y * ((loop_index % image_width)-image_width/2)) + (camera_up_y * (image_height/2 - (loop_index / image_width))) + camera_dir_y;
-                            ray_dir_z <= (camera_right_z * ((loop_index % image_width)-image_width/2)) + (camera_up_z * (image_height/2 - (loop_index / image_width))) + camera_dir_z;
-                        end
-                end
-                UPDATE_LOOP: begin
-                    loop_index <= loop_index + number_of_cores;
-                end
-            endcase
+            // Shifting buffer if pixel is written to packer
+            if (state == WRITE_PIXEL && in_stream_ready) begin
+                pixel_buffer_valid[current_pixel] <= 1'b0;
+                total_pixels_processed <= total_pixels_processed + 1;
+                current_pixel <= total_pixels_processed % (no_of_extra_cores + 1);
+            end
         end
     end
 
+    // Combinational logic for state transitions and output assignments
     always_comb begin
         next_state = state;
+        compute_ready_1 = 1'b0;
+        compute_ready_2 = 1'b0;
+        compute_ready_3 = 1'b0;
+        compute_ready_4 = 1'b0;
+        out_valid = 1'b0;
+        out_r = 8'h00;
+        out_g = 8'h00;
+        out_b = 8'h00;
+
         case (state)
-            IDLE: begin // 0
-                if (en) begin
-                    next_state = CALCULATE_MU;
+            IDLE: begin
+                if (pixel_buffer_valid[current_pixel]) begin
+                    next_state = WRITE_PIXEL;
                 end else begin
+                    case (current_pixel)
+                        0: compute_ready_1 = 1'b1;
+                        1: compute_ready_2 = 1'b1;
+                        2: compute_ready_3 = 1'b1;
+                        3: compute_ready_4 = 1'b1;
+                    endcase
+                end
+            end
+
+            WRITE_PIXEL: begin
+                if (in_stream_ready) begin
+                    out_r = pixel_buffer_r[current_pixel];
+                    out_g = pixel_buffer_g[current_pixel];
+                    out_b = pixel_buffer_b[current_pixel];
+                    out_valid = 1'b1;
                     next_state = IDLE;
                 end
             end
-            CALCULATE_MU: begin // 1
-                next_state = CALCULATE_IMAGE;
-            end
-            CALCULATE_IMAGE: begin // 2
-                next_state = STALL;
-            end
-            STALL: begin // 3
-                if (ready_internal) begin
-                    next_state = GENERATE_RAYS;
-                end else begin
-                    next_state = STALL;
-                end
-            end
-            GENERATE_RAYS: begin // 4
-                next_state = UPDATE_LOOP;
-            end
-            UPDATE_LOOP: begin // 5
-                if (loop_index > image_height * image_width) begin
-                    next_state = IDLE;
-                end else begin
-                    next_state = STALL;
-                end
+
+            default: begin
+                next_state = IDLE;
             end
         endcase
     end
