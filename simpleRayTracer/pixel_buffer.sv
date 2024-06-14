@@ -53,30 +53,30 @@ always @(posedge aclk or negedge aresetn) begin
     end else begin
         state <= next_state;
 
-        // Latching valid input pixels into buffer
-        if (valid1) begin
-            pixel_buffer_r[0] <= r1;
-            pixel_buffer_g[0] <= g1;
-            pixel_buffer_b[0] <= b1;
-            pixel_buffer_valid[0] <= 1'b1;
+        // Latching valid input pixels into buffer based on the number of enabled cores
+        if (valid1 && current_pixel < (no_of_extra_cores + 1)) begin
+            pixel_buffer_r[current_pixel] <= r1;
+            pixel_buffer_g[current_pixel] <= g1;
+            pixel_buffer_b[current_pixel] <= b1;
+            pixel_buffer_valid[current_pixel] <= 1'b1;
         end
-        if (valid2) begin
-            pixel_buffer_r[1] <= r2;
-            pixel_buffer_g[1] <= g2;
-            pixel_buffer_b[1] <= b2;
-            pixel_buffer_valid[1] <= 1'b1;
+        if (valid2 && current_pixel < (no_of_extra_cores + 1)) begin
+            pixel_buffer_r[current_pixel] <= r2;
+            pixel_buffer_g[current_pixel] <= g2;
+            pixel_buffer_b[current_pixel] <= b2;
+            pixel_buffer_valid[current_pixel] <= 1'b1;
         end
-        if (valid3) begin
-            pixel_buffer_r[2] <= r3;
-            pixel_buffer_g[2] <= g3;
-            pixel_buffer_b[2] <= b3;
-            pixel_buffer_valid[2] <= 1'b1;
+        if (valid3 && current_pixel < (no_of_extra_cores + 1)) begin
+            pixel_buffer_r[current_pixel] <= r3;
+            pixel_buffer_g[current_pixel] <= g3;
+            pixel_buffer_b[current_pixel] <= b3;
+            pixel_buffer_valid[current_pixel] <= 1'b1;
         end
-        if (valid4) begin
-            pixel_buffer_r[3] <= r4;
-            pixel_buffer_g[3] <= g4;
-            pixel_buffer_b[3] <= b4;
-            pixel_buffer_valid[3] <= 1'b1;
+        if (valid4 && current_pixel < (no_of_extra_cores + 1)) begin
+            pixel_buffer_r[current_pixel] <= r4;
+            pixel_buffer_g[current_pixel] <= g4;
+            pixel_buffer_b[current_pixel] <= b4;
+            pixel_buffer_valid[current_pixel] <= 1'b1;
         end
 
         // Shifting buffer if pixel is written to packer
