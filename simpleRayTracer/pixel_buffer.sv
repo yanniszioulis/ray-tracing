@@ -29,68 +29,60 @@ module pixel_buffer(
 // State machine states
 typedef enum logic [2:0] {
     IDLE,
-    WAIT_FOR_1,
-    WAIT_FOR_2,
-    WAIT_FOR_3,
-    WAIT_FOR_4,
     WRITE_PIXEL
 } state_t;
 
 state_t state, next_state;
 
 // Buffer to store incoming pixels
-reg [7:0] r_buf[3:0];
-reg [7:0] g_buf[3:0];
-reg [7:0] b_buf[3:0];
-reg [3:0] valid_buf; // Keeps track of which slots in the buffer are valid
-reg core_en1, core_en2, core_en3, core_en4;
-// Current pixel sequence number to be written next
-reg [1:0] current_pixel;
-reg [1:0] next_pixel;
-reg [2:0] core_num;
+localparam MAX_CORES = 4;
+reg [7:0] pixel_buffer_r[MAX_CORES-1:0];
+reg [7:0] pixel_buffer_g[MAX_CORES-1:0];
+reg [7:0] pixel_buffer_b[MAX_CORES-1:0];
+reg [MAX_CORES-1:0] pixel_buffer_valid;
 
-assign core_num = no_of_extra_cores + 3'b001;
+// Current pixel index to be written next
+reg [$clog2(MAX_CORES)-1:0] current_pixel;
 
 // Sequential logic to update state and buffer
 always @(posedge aclk or negedge aresetn) begin
     if (!aresetn) begin
         state <= IDLE;
-        valid_buf <= 4'b0000;
-        current_pixel <= 2'b00; // Start with the first pixel
+        pixel_buffer_valid <= 'b0;
+        current_pixel <= 'b0;
     end else begin
         state <= next_state;
 
         // Latching valid input pixels into buffer
-        if (valid1 && !valid_buf[0]) begin
-            r_buf[0] <= r1;
-            g_buf[0] <= g1;
-            b_buf[0] <= b1;
-            valid_buf[0] <= 1'b1;
+        if (valid1) begin
+            pixel_buffer_r[0] <= r1;
+            pixel_buffer_g[0] <= g1;
+            pixel_buffer_b[0] <= b1;
+            pixel_buffer_valid[0] <= 1'b1;
         end
-        if (valid2 && !valid_buf[1]) begin
-            r_buf[1] <= r2;
-            g_buf[1] <= g2;
-            b_buf[1] <= b2;
-            valid_buf[1] <= 1'b1;
+        if (valid2) begin
+            pixel_buffer_r[1] <= r2;
+            pixel_buffer_g[1] <= g2;
+            pixel_buffer_b[1] <= b2;
+            pixel_buffer_valid[1] <= 1'b1;
         end
-        if (valid3 && !valid_buf[2]) begin
-            r_buf[2] <= r3;
-            g_buf[2] <= g3;
-            b_buf[2] <= b3;
-            valid_buf[2] <= 1'b1;
+        if (valid3) begin
+            pixel_buffer_r[2] <= r3;
+            pixel_buffer_g[2] <= g3;
+            pixel_buffer_b[2] <= b3;
+            pixel_buffer_valid[2] <= 1'b1;
         end
-        if (valid4 && !valid_buf[3]) begin
-            r_buf[3] <= r4;
-            g_buf[3] <= g4;
-            b_buf[3] <= b4;
-            valid_buf[3] <= 1'b1;
+        if (valid4) begin
+            pixel_buffer_r[3] <= r4;
+            pixel_buffer_g[3] <= g4;
+            pixel_buffer_b[3] <= b4;
+            pixel_buffer_valid[3] <= 1'b1;
         end
 
         // Shifting buffer if pixel is written to packer
         if (state == WRITE_PIXEL && in_stream_ready) begin
-            valid_buf[current_pixel] <= 1'b0;
-            next_pixel = (current_pixel + 1) % core_num[1:0];
-            current_pixel <= next_pixel; // Update current_pixel with next_pixel value
+            pixel_buffer_valid[current_pixel] <= 1'b0;
+            current_pixel <= (current_pixel + 1) % (no_of_extra_cores + 1);
         end
     end
 end
@@ -106,72 +98,26 @@ always_comb begin
     out_r = 8'h00;
     out_g = 8'h00;
     out_b = 8'h00;
-    core_en1 = 1'b0;
-    core_en2 = 1'b0;
-    core_en3 = 1'b0;
-    core_en4 = 1'b0;
-
-    // Determine which cores are enabled
-    if (no_of_extra_cores >= 3'b000) begin
-        core_en1 = 1'b1;
-    end
-    if (no_of_extra_cores >= 3'b001) begin
-        core_en2 = 1'b1;
-    end
-    if (no_of_extra_cores >= 3'b010) begin
-        core_en3 = 1'b1;
-    end
-    if (no_of_extra_cores >= 3'b011) begin
-        core_en4 = 1'b1;
-    end
 
     case (state)
         IDLE: begin
-            if (valid_buf[current_pixel]) begin
+            if (pixel_buffer_valid[current_pixel]) begin
                 next_state = WRITE_PIXEL;
             end else begin
                 case (current_pixel)
-                    2'b00: if (core_en1) next_state = WAIT_FOR_1;
-                    2'b01: if (core_en2) next_state = WAIT_FOR_2;
-                    2'b10: if (core_en3) next_state = WAIT_FOR_3;
-                    2'b11: if (core_en4) next_state = WAIT_FOR_4;
+                    0: compute_ready_1 = 1'b1;
+                    1: compute_ready_2 = 1'b1;
+                    2: compute_ready_3 = 1'b1;
+                    3: compute_ready_4 = 1'b1;
                 endcase
             end
         end
 
-        WAIT_FOR_1: begin
-            if (valid_buf[0]) begin
-                next_state = WRITE_PIXEL;
-            end
-            compute_ready_1 = 1'b1; // Signal ray tracing unit 1 to start computing next pixel
-        end
-
-        WAIT_FOR_2: begin
-            if (valid_buf[1]) begin
-                next_state = WRITE_PIXEL;
-            end
-            compute_ready_2 = 1'b1; // Signal ray tracing unit 2 to start computing next pixel
-        end
-
-        WAIT_FOR_3: begin
-            if (valid_buf[2]) begin
-                next_state = WRITE_PIXEL;
-            end
-            compute_ready_3 = 1'b1; // Signal ray tracing unit 3 to start computing next pixel
-        end
-
-        WAIT_FOR_4: begin
-            if (valid_buf[3]) begin
-                next_state = WRITE_PIXEL;
-            end
-            compute_ready_4 = 1'b1; // Signal ray tracing unit 4 to start computing next pixel
-        end
-
         WRITE_PIXEL: begin
             if (in_stream_ready) begin
-                out_r = r_buf[current_pixel];
-                out_g = g_buf[current_pixel];
-                out_b = b_buf[current_pixel];
+                out_r = pixel_buffer_r[current_pixel];
+                out_g = pixel_buffer_g[current_pixel];
+                out_b = pixel_buffer_b[current_pixel];
                 out_valid = 1'b1;
                 next_state = IDLE;
             end
