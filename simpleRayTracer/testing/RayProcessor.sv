@@ -12,6 +12,7 @@ module RayProcessor #(
     input logic [12:0]                      image_width, image_height,
     input logic                             ready_external,
     input logic [31:0]                      loop_index,
+    input logic [2:0]                       core_number,
     output logic [7:0]                      r, g, b,
     output logic                            ready_internal,                      // signal to go back to ray gen to tell it to generate new ray
     output logic                            valid_data_out,             // signal to next block/ buffer to read output from ray processor
@@ -119,6 +120,7 @@ module RayProcessor #(
     logic                       in_range;
 
     logic                       intermediate_ready;
+    
 
     typedef enum logic [4:0] { 
         NEW_FRAME,                      // 0
@@ -788,13 +790,13 @@ module RayProcessor #(
                     next_state = OUTPUT_COLOUR;
                 end
 
-                if ((loop_index - 1 ) % image_width == 0) begin
+                if ((loop_index - 4) % image_width == 0) begin
                     last_x = 1;
                 end else begin
                     last_x = 0;
                 end
 
-                if (loop_index == 2) begin
+                if (loop_index == 5) begin
                     sof = 1;
                 end else begin
                     sof = 0;

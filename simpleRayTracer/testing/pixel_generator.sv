@@ -209,7 +209,7 @@ RayTracingUnit ray_tracing_unit (
     .cameraDirX(11'd0),  // Assign appropriate values
     .cameraDirY(11'd0),  // Assign appropriate values
     .cameraDirZ(11'd230),  // Assign appropriate values
-    .cameraPosX(11'd250),  // Assign appropriate values
+    .cameraPosX(11'd250),  // Assign appropriate values 
     .cameraPosY(11'd512),  // Assign appropriate values
     .cameraRightX(11'd1),
     .cameraRightY(11'd0),
@@ -222,11 +222,11 @@ RayTracingUnit ray_tracing_unit (
     .imageHeight(13'd200), // Assign appropriate values
     .ReadyExternal(ready),
     .validRead(valid_int),
-    .lastX(lastx),
-    .Sof(first),
-    .red(red),
-    .green(green),
-    .blue(blue)
+    .EOL_out(lastx),
+    .SOF_out(first),
+    .out_red(red),
+    .out_green(green),
+    .out_blue(blue)
 );
 
 packer pixel_packer(    .aclk(out_stream_aclk),

@@ -73,7 +73,7 @@ int main(int argc, char** argv, char** env) {
                         << static_cast<int>(top->out_green) << " "
                         << static_cast<int>(top->out_blue) << "\n";
                 pixels ++;
-                if (top->lastX)
+                if (top->EOL_out)
                 {
                     lasts.push_back(pixels);
                     eol++;

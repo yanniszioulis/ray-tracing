@@ -92,7 +92,7 @@ module RayGenerator
                 next_state = UPDATE_LOOP;
             end
             UPDATE_LOOP: begin // 5
-                if (loop_index > image_height * image_width) begin
+                if (loop_index > image_height * image_width - number_of_cores) begin
                     next_state = IDLE;
                 end else begin
                     next_state = STALL;

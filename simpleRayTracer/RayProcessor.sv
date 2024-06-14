@@ -794,7 +794,7 @@ module RayProcessor #(
                     last_x = 0;
                 end
 
-                if (loop_index == 2) begin
+                if (loop_index == 8) begin
                     sof = 1;
                 end else begin
                     sof = 0;

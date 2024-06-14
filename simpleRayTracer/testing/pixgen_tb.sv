@@ -6,12 +6,12 @@ module pixgen_tb;
     localparam RANDOM_READY = 2;        // Ready signal is true 50% of the time according to pseudo-random sequence
     localparam READY_AFTER_VALID = 3;   // Ready signal goes true after valid is true, then goes false
     
-    parameter READY_MODE = READY_AFTER_VALID;
+    parameter READY_MODE = RANDOM_READY;
 
     parameter TIMEOUT = 10000;           // Time to wait for valid to be true
     parameter X_SIZE = 150;             // X dimension of image in words (words = pixels * 3/4)
     parameter Y_SIZE = 200;             // Y dimension of image
-    parameter ENDTIME = 75429245000;    // end time of simulation
+    parameter ENDTIME = 18680735000;    // end time of simulation
     parameter RND_SEED = 1246504138;    // Random seed for ready signal generation
     
     // Simulation configuration
