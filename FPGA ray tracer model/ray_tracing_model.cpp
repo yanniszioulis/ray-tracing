@@ -11,13 +11,13 @@ using namespace std;
 
 int coord_bit_length = 10;
 
-vector<int> cam_pos = {500, 500, 0};
-vector<int> cam_norm = {0,0,100};
+vector<int> cam_pos = {200, 300, 0};
+vector<int> cam_norm = {0,0,230};
 vector<int> cam_up = {0,1,0};
 vector<int> cam_right = {1,0,0};
 
-int im_width = 256;
-int im_height = 256;
+int im_width = 640;
+int im_height = 480;
 
 const vector<bitset<32>> octree = {
     bitset<32>(1),
@@ -26,8 +26,8 @@ const vector<bitset<32>> octree = {
     bitset<32>(0x80000000),
     bitset<32>(0x80000000),
     bitset<32>(0x80000000),
-    bitset<32>(0x80000000),
     bitset<32>(0x80000002),
+    bitset<32>(0x80000003),
     bitset<32>(0x80000001)
 }; 
 // bit 31 is set for material 
@@ -61,14 +61,13 @@ tuple<bitset<32>, int, vector<int>, vector<int>> traverseTree(vector<int> ray_po
 
     while(!node.test(31) && depth < coord_bit_length){
 
-        depth += 1;
-        oct_size /= 2;
         string temp_str;
         temp_str += z_bin.to_string()[depth];
         temp_str += y_bin.to_string()[depth];
         temp_str += x_bin.to_string()[depth];
-        bitset<3> temp(temp_str);
-        int octant = int(temp.to_ulong());
+        int octant = stoi(temp_str, nullptr, 2);
+        depth += 1;
+        oct_size /= 2;
 
         aabb_min[0] = aabb_min[0] + (x_bin[coord_bit_length-depth]*oct_size);
         aabb_min[1] = aabb_min[1] + (y_bin[coord_bit_length-depth]*oct_size);
@@ -79,36 +78,25 @@ tuple<bitset<32>, int, vector<int>, vector<int>> traverseTree(vector<int> ray_po
         aabb_max[2] = aabb_min[2] + oct_size-1;
 
         int nodeIndex = int(node.to_ulong()) + octant;
-        //cout << nodeIndex << endl;
         node = octree[nodeIndex];
     }
     return make_tuple(node, oct_size, aabb_min, aabb_max);
 }
 
 vector<int> stepRay(vector<int> ray_pos, vector<int> ray_dir, int oct_size, vector<int> aabb_min, vector<int> aabb_max){
-    //cout << "stepping" << endl;
     while(ray_dir[0]*ray_dir[0] + ray_dir[1]*ray_dir[1] + ray_dir[2]*ray_dir[2] < oct_size*oct_size){
         ray_dir[0] *= 2;
         ray_dir[1] *= 2;
         ray_dir[2] *= 2;
     }
     while(!justOutsideAABB(ray_pos, aabb_min, aabb_max)){
-        //cout << "not just outside" << endl;
         vector<int> temp_pos = ray_pos;
         temp_pos[0] = temp_pos[0] + ray_dir[0];
         temp_pos[1] = temp_pos[1] + ray_dir[1];
         temp_pos[2] = temp_pos[2] + ray_dir[2];
         if(withinAABB(temp_pos, aabb_min, aabb_max) || justOutsideAABB(temp_pos, aabb_min, aabb_max)){
-            // cout << "updating position" << endl;
             ray_pos = temp_pos;
         }
-        // cout << "x pos: " << temp_pos[0] << endl;
-        // cout << "y pos: " << temp_pos[1] << endl;
-        // cout << "z pos: " << temp_pos[2] << endl;
-
-        // cout << "x dir: " << ray_dir[0] << endl;
-        // cout << "y dir: " << ray_dir[1] << endl;
-        // cout << "z dir: " << ray_dir[2] << endl;
 
         ray_dir[0] = (abs(ray_dir[0])<=1) ? (ray_dir[0]>=0 ? 1 : -1) : ray_dir[0]/2;
         ray_dir[1] = (abs(ray_dir[1])<=1) ? (ray_dir[1]>=0 ? 1 : -1)  : ray_dir[1]/2;
@@ -138,13 +126,13 @@ int main(){
     cout << "started" << endl;
     for(int y = 0; y < im_height; y++){
         for(int x = 0; x < im_width; x++){
-            cout << "x: " << x << " y: " << y << endl;
             int centered_x = x - (im_width / 2);
             int centered_y = (im_height / 2) - y;
             vector<int> ray_dir = cam_norm;
             ray_dir[0] += (centered_x*cam_right[0] + centered_y*cam_up[0]);
             ray_dir[1] += (centered_x*cam_right[1] + centered_y*cam_up[1]);
             ray_dir[2] += (centered_x*cam_right[2] + centered_y*cam_up[2]);
+
             vector<int> ray_pos = cam_pos;
 
             int world_size = pow(2, coord_bit_length);
@@ -158,9 +146,8 @@ int main(){
             bitset<32> node;
             vector<int> colour;
             while(withinAABB(ray_pos, world_min, world_max)){
-                tie(node, oct_size, aabb_min, aabb_max) = traverseTree(ray_pos, world_size, world_min, world_max);
-                // make tuple and pass in world values 
 
+                tie(node, oct_size, aabb_min, aabb_max) = traverseTree(ray_pos, world_size, world_min, world_max);
                 unsigned int mid = node.to_ulong() & 0x7FFFFFFF;
 
                 if(mid==0){
@@ -168,7 +155,7 @@ int main(){
                     ray_pos = stepRay(ray_pos, ray_dir, oct_size, aabb_min, aabb_max);
                 }
                 if(mid>0){
-                    //cout << "more than air" << endl;
+                    // cout << "Material: " << mid << " found at x: " << x << " y: " << y << endl;
                     colour = material_table[mid];
                     break;
                 }
