@@ -4,13 +4,14 @@ from tqdm import tqdm
 
 # Parameters
 coord_bit_length = 10
-cam_pos = np.array([250, 512, 0])
-cam_norm = np.array([0, 0, 230])
+cam_pos = np.array([200, 300, 0])
+cam_norm = np.array([0, 0, 70])
 cam_up = np.array([0, 1, 0])
 cam_right = np.array([1, 0, 0])
-im_height = 512
-im_width = 512
-octree = [0, 0, 0, 0, [0,0,0,0,3,2,4,[0,3,0,0,1,[0,0,0,0,0,1,2,3],2,1]], 2, 3, 1]
+im_height = 256
+im_width = 256
+#octree = [0, 0, 0, 0, [0,0,0,0,3,2,4,[0,3,0,0,1,[0,0,0,0,0,1,2,3],2,1]], 2, 3, 1]
+octree = [0, 0, 0, 0, 0, 2, 3, 1]
 material_table = [[0, 0, 0], [255, 255, 255], [0, 255, 0], [0, 0, 255], [255, 0, 0]]
 
 # Image placeholder
@@ -56,17 +57,15 @@ def stepRay(ray_pos, ray_dir, oct_size, aabb_min, aabb_max):
 def apply_gamma_correction(color, gamma=2.2):
     return np.clip(255 * (color / 255) ** (1 / gamma), 0, 255).astype(np.uint8)
 
-# Total number of pixels
 total_pixels = im_height * im_width
 
-# Create a progress bar
 with tqdm(total=total_pixels, desc="Rendering", unit="pixel") as pbar:
     for y in range(im_height):
         for x in range(im_width):
             centered_x = x - (im_width / 2)
             centered_y = (im_height / 2) - y
             ray_dir = (cam_right * centered_x + cam_up * centered_y + cam_norm)
-            ray_dir = ray_dir / np.linalg.norm(ray_dir) # NORMALISATION HERE?????
+            ray_dir = ray_dir / np.linalg.norm(ray_dir)
             ray_pos = np.copy(cam_pos)
             ray_pos = roundPosition(ray_pos)
             
@@ -82,7 +81,6 @@ with tqdm(total=total_pixels, desc="Rendering", unit="pixel") as pbar:
                 if mid == 0:
                     ray_pos = stepRay(ray_pos, ray_dir, oct_size, aabb_min, aabb_max)
                 if mid > 0:
-                    # Determine the hit face normal
                     hit_normal = np.array([0, 0, 0])
                     if ray_pos[0] == aabb_min[0]:
                         hit_normal = np.array([-1, 0, 0])
@@ -97,13 +95,11 @@ with tqdm(total=total_pixels, desc="Rendering", unit="pixel") as pbar:
                     elif ray_pos[2] == aabb_max[2]:
                         hit_normal = np.array([0, 0, 1])
                     
-                    # Calculate brightness factor based on light direction (camera position)
                     light_dir = cam_pos - ray_pos
                     light_dir = light_dir / np.linalg.norm(light_dir)
                     
                     brightness_factor = (np.dot(light_dir, hit_normal))**2
                     
-                    # Apply shading
                     colour = np.array(material_table[mid]) * brightness_factor
                     colour = np.clip(colour, 0, 255).astype(np.uint8)
                     colour = apply_gamma_correction(colour)
@@ -114,7 +110,6 @@ with tqdm(total=total_pixels, desc="Rendering", unit="pixel") as pbar:
             
             image[y, x] = colour
             
-            # Update progress bar
             pbar.update(1)
 
 print("done")

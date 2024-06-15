@@ -195,7 +195,7 @@ int main(){
                     vector<double> light_dir = {static_cast<double>(-ray_dir[0]), static_cast<double>(-ray_dir[1]), static_cast<double>(-ray_dir[2])};
                     light_dir = normaliseVector(light_dir);
 
-                    double brightness_factor = pow((hit_normal[0]*light_dir[0] + hit_normal[1]*light_dir[1] + hit_normal[2]*light_dir[2]) , 2);
+                    double brightness_factor = pow((hit_normal[0]*light_dir[0] + hit_normal[1]*light_dir[1] + hit_normal[2]*light_dir[2]) , 1.4);
 
                     // cout << "Material: " << mid << " found at x: " << x << " y: " << y << endl;
                     colour = material_table[mid];
