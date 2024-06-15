@@ -51,7 +51,7 @@ module RayTracingUnit
         .ray_dir_y(dirY1),
         .ray_dir_z(dirZ1),
         .loop_index(loopIndex1),
-        .op_code(2'b11),
+        .op_code(2'b01),
         .core_number(3'b001),
         .en(1'b1)
     );
@@ -108,7 +108,7 @@ module RayTracingUnit
         .ray_dir_y(dirY2),
         .ray_dir_z(dirZ2),
         .loop_index(loopIndex2),
-        .op_code(2'b11),
+        .op_code(2'b01),
         .core_number(3'b010),
         .en(1'b1)
     );

@@ -54,7 +54,7 @@ module pixel_buffer (
     // Sequential logic to update state and buffer
     // Sequential logic to update state and buffer
     always @(posedge aclk) begin
-        if (!aresetn) begin
+        if (aresetn) begin
             state <= IDLE;
             pixel_buffer_valid <= 'b0;
             current_pixel <= 'b0;
@@ -71,8 +71,6 @@ module pixel_buffer (
                 pixel_buffer_r[0] <= r1;
                 pixel_buffer_g[0] <= g1;
                 pixel_buffer_b[0] <= b1;
-                EOL_buffer[0] <= eol1;
-                SOF_buffer[0] <= sof1;
                 pixel_buffer_valid[0] <= 1'b1;
                 pixel_count <= pixel_count + 1;
             end
@@ -80,8 +78,6 @@ module pixel_buffer (
                 pixel_buffer_r[1] <= r2;
                 pixel_buffer_g[1] <= g2;
                 pixel_buffer_b[1] <= b2;
-                EOL_buffer[1] <= eol2;
-                SOF_buffer[1] <= sof2;
                 pixel_buffer_valid[1] <= 1'b1;
                 pixel_count <= pixel_count + 1;
             end
