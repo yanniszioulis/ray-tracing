@@ -20,7 +20,8 @@ module RayProcessor #(
     output logic                            sof,
     input logic [31:0]                      node,
     output logic [31:0]                     address,
-    output logic                            ren
+    output logic                            ren,
+    output logic                            dir_valid
 
 );
 
@@ -227,6 +228,8 @@ module RayProcessor #(
                 received_material_id <= 0;
                 index <= COORD_BIT_LEN-1;
                 depth <= 0;
+                intermediate_ready <= 1;
+                valid <= 0;
                 /* verilator lint_on WIDTH */
 
                 // root address <= address in ROM of root 
@@ -642,8 +645,10 @@ module RayProcessor #(
             IDLE: begin // 2
                 if (valid) begin
                     next_state = RAY_TRAVERSE_INITIALISE;
+                    dir_valid = 1;
                 end else begin
                     next_state = IDLE;
+                    dir_valid = 0;
                 end
                 valid_data_out = 0;
 
@@ -790,13 +795,13 @@ module RayProcessor #(
                     next_state = OUTPUT_COLOUR;
                 end
 
-                if ((loop_index - 4) % image_width == 0) begin
+                if ((loop_index - 3) % image_width == 0) begin
                     last_x = 1;
                 end else begin
                     last_x = 0;
                 end
 
-                if (loop_index == 5) begin
+                if (loop_index == 3) begin
                     sof = 1;
                 end else begin
                     sof = 0;

@@ -6,6 +6,7 @@ module RayGenerator
     input logic [10:0]      camera_right_x, camera_right_y, camera_right_z,
     input logic [10:0]      camera_up_x, camera_up_y, camera_up_z,
     input logic [12:0]      image_width, image_height,
+    input logic             dir_valid,
 
     input logic [2:0]       core_number, 
     input logic [1:0]       op_code,
@@ -43,7 +44,7 @@ module RayGenerator
                     number_of_cores <= op_code + 1;
                 end 
                 CALCULATE_MU: begin
-                    // OLD
+                    // loop_index <= core_number + 1;
                 end
                 CALCULATE_IMAGE: begin
                     // OLD
@@ -89,10 +90,15 @@ module RayGenerator
                 end
             end
             GENERATE_RAYS: begin // 4
+                // if (dir_valid) begin
+                //     next_state = UPDATE_LOOP;
+                // end else begin
+                //     next_state = GENERATE_RAYS;
+                // end
                 next_state = UPDATE_LOOP;
             end
             UPDATE_LOOP: begin // 5
-                if (loop_index > image_height * image_width + number_of_cores) begin
+                if (loop_index > image_height * image_width - 1) begin
                     next_state = IDLE;
                 end else begin
                     next_state = STALL;

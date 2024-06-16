@@ -12,7 +12,7 @@ module pixel_buffer (
 
     input logic valid1,
     input logic valid2,
-    input logic [2:0] no_of_extra_cores,
+    input logic [1:0] no_of_extra_cores,
 
     output logic compute_ready_1,
     output logic compute_ready_2,
@@ -128,23 +128,25 @@ module pixel_buffer (
                     out_r = pixel_buffer_r[current_pixel];
                     out_g = pixel_buffer_g[current_pixel];
                     out_b = pixel_buffer_b[current_pixel];
+                    SOF_out = SOF_buffer[current_pixel];
+                    EOL_out = EOL_buffer[current_pixel];
                     out_valid = 1'b1;
-                    if(pixel_count % image_width == 0) begin
-                        EOL_out = 1;
-                    end else begin
-                        EOL_out = 0;
-                    end
-                    if(pixel_count == 1) begin
-                        SOF_out = 1;
-                        pixel_count_reset = 0;
-                    end else if (pixel_count == image_height * image_width) begin 
-                        pixel_count_reset = 1;
-                        SOF_out = 0; 
-                    end
-                    else begin
-                        SOF_out = 0;
-                        pixel_count_reset = 0;
-                    end
+                    // if(pixel_count % image_width == 0) begin
+                    //     EOL_out = 1;
+                    // end else begin
+                    //     EOL_out = 0;
+                    // end
+                    // if(pixel_count == 1) begin
+                    //     SOF_out = 1;
+                    //     pixel_count_reset = 0;
+                    // end else if (pixel_count == image_height * image_width) begin 
+                    //     pixel_count_reset = 1;
+                    //     SOF_out = 0; 
+                    // end
+                    // else begin
+                    //     SOF_out = 0;
+                    //     pixel_count_reset = 0;
+                    // end
                     next_state = IDLE;
 
                 end

@@ -732,7 +732,7 @@ module RayProcessor #(
                 end
             end
             COLOUR_FORMAT: begin // 17
-                next_state = SHADING_1;
+                next_state = OUTPUT_COLOUR_INIT; // CHANGE TO OUTPUT COLOUR INIT TO TURN OFF SHADING
             end
             SHADING_1: begin // 18
                 next_state = SHADING_2;

@@ -54,7 +54,7 @@ module pixel_buffer (
     // Sequential logic to update state and buffer
     // Sequential logic to update state and buffer
     always @(posedge aclk) begin
-        if (aresetn) begin
+        if (!aresetn) begin
             state <= IDLE;
             pixel_buffer_valid <= 'b0;
             current_pixel <= 'b0;

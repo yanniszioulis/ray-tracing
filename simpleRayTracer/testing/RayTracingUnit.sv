@@ -26,6 +26,7 @@ module RayTracingUnit
     logic                       ready1, ready2;
     logic                       lastX1, lastX2;
     logic                       sof1, sof2;
+    logic                       dirValid1, dirValid2;
 
     RayGenerator ray_generator1 
     (
@@ -53,7 +54,8 @@ module RayTracingUnit
         .loop_index(loopIndex1),
         .op_code(2'b01),
         .core_number(3'b001),
-        .en(1'b1)
+        .en(1'b1),
+        .dir_valid(dirValid1)
     );
 
 
@@ -80,7 +82,8 @@ module RayTracingUnit
         .address(addr1),
         .node(dout1),
         .ren(ren1),
-        .loop_index(loopIndex1)
+        .loop_index(loopIndex1),
+        .dir_valid(dirValid1)
     );
 
 
@@ -110,7 +113,8 @@ module RayTracingUnit
         .loop_index(loopIndex2),
         .op_code(2'b01),
         .core_number(3'b010),
-        .en(1'b1)
+        .en(1'b1),
+        .dir_valid(dirValid2)
     );
 
 
@@ -137,7 +141,8 @@ module RayTracingUnit
         .address(addr2),
         .node(dout2),
         .ren(ren2),
-        .loop_index(loopIndex2)
+        .loop_index(loopIndex2),
+        .dir_valid(dirValid2)
     );
 
 

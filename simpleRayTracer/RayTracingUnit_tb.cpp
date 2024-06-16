@@ -25,19 +25,19 @@ int main(int argc, char** argv, char** env) {
     tfp->open("RayTracingUnit.vcd");
 
     // Initialize simulation inputs
-    int image_width = 400;
-    int image_height = 400;
+    int image_width = 500;
+    int image_height = 500;
     top->clk = 0;
     top->reset = 1;
     top->cameraPosX = 250;
     top->cameraPosY = 250;
-    top->cameraPosZ = 0;
-    top->cameraDirX = 0;
+    top->cameraPosZ = 400;
+    top->cameraDirX = 70;
     top->cameraDirY = 0;
-    top->cameraDirZ = 230; // Assuming the camera is pointing in the positive z direction
+    top->cameraDirZ = 70; // Assuming the camera is pointing in the positive z direction
     top->cameraRightX = 1;
     top->cameraRightY = 0;
-    top->cameraRightZ = 0;
+    top->cameraRightZ = -1;
     top->cameraUpX = 0;
     top->cameraUpY = 1;
     top->cameraUpZ = 0;
