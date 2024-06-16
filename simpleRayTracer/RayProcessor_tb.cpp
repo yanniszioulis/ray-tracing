@@ -41,11 +41,11 @@ int main(int argc, char** argv, char** env) {
     int image_height = 200;
     top->clk = 0;
     top->reset = 1;
-    top->cameraPosX = 400;
-    top->cameraPosY = 800;
+    top->cameraPosX = 512;
+    top->cameraPosY = 512;
     top->cameraPosZ = 0;
-    top->cameraDirX = 50;
-    top->cameraDirY = -30;
+    top->cameraDirX = 0;
+    top->cameraDirY = 0;
     top->cameraDirZ = 80; // Assuming the camera is pointing in the positive z direction
     top->imageWidth = image_width;
     top->imageHeight = image_height;

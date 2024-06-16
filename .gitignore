@@ -4,5 +4,7 @@ simpleRayTracer/obj_dir
 
 simpleRayTracer/*.vcd
 
+simpleRayTracer/myenv
+
 *.txt
 *.ppm
