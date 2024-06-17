@@ -36,7 +36,7 @@ def initialize():
     pygame.init()
     pygame.display.set_caption("3D Camera Control")
     font = pygame.font.Font(None, 24)
-    return pygame.display.set_mode((1300, 900))
+    return pygame.display.set_mode((1300, 1000))
 
 # Draw a grid of squares for RGB selection
 def draw_color_grid(screen):
@@ -273,7 +273,7 @@ def main():
         draw_sliders(screen)
 
         # Display the frame received from the server
-        screen.blit(frame_surface, (10, 400))
+        screen.blit(frame_surface, (10, 480))
 
         # Draw buttons
         pygame.draw.rect(screen, button_background_color, horizontal_flip_button)
