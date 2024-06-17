@@ -37,7 +37,7 @@ def update_camera_position(keys):
         camera_pos_x -= sensitivity
     if keys[pygame.K_d]:
         camera_pos_x += sensitivity
-    if keys[pygame.K_SPACE]:
+    if keys[pygame.K_LSHIFT]:
         camera_pos_z += sensitivity
     if keys[pygame.K_LCTRL]:
         camera_pos_z -= sensitivity
