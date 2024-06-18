@@ -1,12 +1,12 @@
 # Define the input and output file names
 input_file = '/Users/yanniszioulis/Documents/raytracinggithub/ray-tracing/mem-parser/octree_output.txt'
 intermediate_file = '/Users/yanniszioulis/Documents/raytracinggithub/ray-tracing/mem-parser/intermediate-octree_output.txt'
-final_output_file = '/Users/yanniszioulis/Documents/raytracinggithub/ray-tracing/mem-parser/final_octree_output.txt'
+final_output_file = '/Users/yanniszioulis/Documents/raytracinggithub/ray-tracing/mem-parser/effdog.mem'
 
 
 # Function to convert an integer to 32-bit hexadecimal in the required format
 def to_hex_32bit(value):
-    return f"32'h{value:08x}"
+    return f"{value:08x}"
 
 # Step 1: Add line numbers to the input file
 def add_line_numbers(input_file, output_file):
@@ -39,14 +39,22 @@ def update_and_format_lines(node_to_line_index, lines, output_file):
                 first_child_index = int(parts[1].strip())
                 if first_child_index in node_to_line_index:
                     hex_index = to_hex_32bit(node_to_line_index[first_child_index])
-                    updated_line = f"rom_array[{index}] = {hex_index};\n"
+                    updated_line = f"{hex_index}\n"
                 else:
                     updated_line = line_content
             else:
                 if "Material ID = None" in line_content:
-                    updated_line = f"rom_array[{index}] = 32'hFFFFFFF0;\n"
-                else:
-                    updated_line = f"rom_array[{index}] = 32'hFFFFFFF1;\n"
+                    updated_line = f"FFFFFFF0\n"
+                elif ("Material ID = BrownMaterial (Instance)" in line_content):
+                    updated_line = f"FFFFFFF1\n"
+                elif ("Material ID = BeigeMaterial (Instance)" in line_content):
+                    updated_line = f"FFFFFFF2\n"
+                elif ("Material ID = WhiteMaterial (Instance)" in line_content):
+                    updated_line = f"FFFFFFF3\n"
+                elif ("Material ID = BlackMaterial (Instance)" in line_content):
+                    updated_line = f"FFFFFFF4\n"
+                elif ("Material ID = DarkBeigeMaterial (Instance)" in line_content):
+                    updated_line = f"FFFFFFF5\n"
             file.write(updated_line)
 
 # Main function to execute all steps

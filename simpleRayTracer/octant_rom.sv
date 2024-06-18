@@ -8,11 +8,11 @@ module octant_rom #(
     input   logic                       ren
 );
 
-logic   [DATA_WIDTH-1:0] rom_array [40:0];
+logic   [DATA_WIDTH-1:0] rom_array [37602:0];
 
 initial begin
     $display("loading mem...");
-    $readmemh("octree.mem", rom_array);
+    $readmemh("effdog.mem", rom_array);
     $display("loaded");
     // rom_array[0] = 32'h00000001;
     // rom_array[1] = 32'h00000009;

@@ -29,9 +29,9 @@ int main(int argc, char** argv, char** env) {
     int image_height = 600;
     top->clk = 0;
     top->reset = 1;
-    top->cameraPosX = 400;
-    top->cameraPosY = 400;
-    top->cameraPosZ = 500;
+    top->cameraPosX = 100;
+    top->cameraPosY = 300;
+    top->cameraPosZ = 0;
     top->cameraDirX = 0;
     top->cameraDirY = 0;
     top->cameraDirZ = 100; // Assuming the camera is pointing in the positive z direction
