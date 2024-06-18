@@ -394,57 +394,57 @@ module RayProcessor #(
 
                 // Block below: for more accurate direction vector.
 
-                if(reg_ray_dir_x == 1 || reg_ray_dir_x == -1) begin
-                    underflow_x <= 1;
-                    if(underflow_x == 0 || (reg_ray_dir_y == 0 && reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1) ) begin
-                        if(reg_ray_dir_x == 1) begin
-                            reg_ray_dir_x <= 1;
-                        end
-                        if(reg_ray_dir_x == -1) begin
-                            reg_ray_dir_x <= -1;
-                        end
-                    end
-                end
-                else begin
-                    reg_ray_dir_x <= reg_ray_dir_x >>> 1;
-                end
+                // if(reg_ray_dir_x == 1 || reg_ray_dir_x == -1) begin
+                //     underflow_x <= 1;
+                //     if(underflow_x == 0 || (reg_ray_dir_y == 0 && reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1) ) begin
+                //         if(reg_ray_dir_x == 1) begin
+                //             reg_ray_dir_x <= 1;
+                //         end
+                //         if(reg_ray_dir_x == -1) begin
+                //             reg_ray_dir_x <= -1;
+                //         end
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_x <= reg_ray_dir_x >>> 1;
+                // end
 
-                if(reg_ray_dir_y == 1 || reg_ray_dir_y == -1) begin
-                    underflow_y <= 1;
-                    if(underflow_y == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
-                        if(reg_ray_dir_y == 1) begin
-                            reg_ray_dir_y <= 1;
-                        end
-                        if(reg_ray_dir_y == -1) begin
-                            reg_ray_dir_y <= -1;
-                        end
-                    end
-                end
-                else begin
-                    reg_ray_dir_y <= reg_ray_dir_y >>> 1;
-                end
+                // if(reg_ray_dir_y == 1 || reg_ray_dir_y == -1) begin
+                //     underflow_y <= 1;
+                //     if(underflow_y == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
+                //         if(reg_ray_dir_y == 1) begin
+                //             reg_ray_dir_y <= 1;
+                //         end
+                //         if(reg_ray_dir_y == -1) begin
+                //             reg_ray_dir_y <= -1;
+                //         end
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_y <= reg_ray_dir_y >>> 1;
+                // end
 
-                if(reg_ray_dir_z == 1 || reg_ray_dir_z == -1) begin
-                    underflow_z <= 1;
-                    if(underflow_z == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_y == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
-                        if(reg_ray_dir_z == 1) begin
-                            reg_ray_dir_z <= 1;
-                        end
-                        if(reg_ray_dir_z == -1) begin
-                            reg_ray_dir_z <= -1;
-                        end
-                    end
-                end
-                else begin
-                    reg_ray_dir_z <= reg_ray_dir_z >>> 1;
-                end
+                // if(reg_ray_dir_z == 1 || reg_ray_dir_z == -1) begin
+                //     underflow_z <= 1;
+                //     if(underflow_z == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_y == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
+                //         if(reg_ray_dir_z == 1) begin
+                //             reg_ray_dir_z <= 1;
+                //         end
+                //         if(reg_ray_dir_z == -1) begin
+                //             reg_ray_dir_z <= -1;
+                //         end
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_z <= reg_ray_dir_z >>> 1;
+                // end
                 
                 
                 // Less accurate direction vector:
 
-                // reg_ray_dir_x <= (reg_ray_dir_x == 1) ? 1 : reg_ray_dir_x >>> 1;
-                // reg_ray_dir_y <= (reg_ray_dir_y == 1) ? 1 : reg_ray_dir_y >>> 1;
-                // reg_ray_dir_z <= (reg_ray_dir_z == 1) ? 1 : reg_ray_dir_z >>> 1;
+                reg_ray_dir_x <= (reg_ray_dir_x == 1) ? 1 : reg_ray_dir_x >>> 1;
+                reg_ray_dir_y <= (reg_ray_dir_y == 1) ? 1 : reg_ray_dir_y >>> 1;
+                reg_ray_dir_z <= (reg_ray_dir_z == 1) ? 1 : reg_ray_dir_z >>> 1;
                 
             end
             RAY_STEP_OUTSIDE: begin // 16
