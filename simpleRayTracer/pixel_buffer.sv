@@ -7,12 +7,13 @@ module pixel_buffer (
 
     input logic       eol1, eol2,
     input logic       sof1, sof2,
+    input logic       loop_index_1, loop_index_2,
 
     input logic [12:0] image_width, image_height,
 
     input logic valid1,
     input logic valid2,
-    input logic [2:0] no_of_extra_cores,
+    input logic [1:0] no_of_extra_cores,
 
     output logic compute_ready_1,
     output logic compute_ready_2,
@@ -41,6 +42,7 @@ module pixel_buffer (
     logic [7:0] pixel_buffer_b[MAX_CORES-1:0];
     logic EOL_buffer[MAX_CORES-1:0];
     logic SOF_buffer[MAX_CORES-1:0];
+    logic loop_index[MAX_CORES-1:0];
     logic [MAX_CORES-1:0] pixel_buffer_valid;
 
     // Current pixel index to be written next

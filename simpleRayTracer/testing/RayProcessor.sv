@@ -4,15 +4,16 @@ This module will take as input the direction vector of a ray and position of the
 */
 
 module RayProcessor #(
-    parameter COORD_BIT_LEN = 10
+    parameter COORD_BIT_LEN = 10,
+    parameter OCTANT_BIT_LEN = 10
 )(
     input logic                             clk, reset_n,
-    input logic [31:0]                      ray_dir_x, ray_dir_y, ray_dir_z,
-    input logic [COORD_BIT_LEN:0]           camera_pos_x, camera_pos_y, camera_pos_z,
+    input logic signed [11:0]               ray_dir_x, ray_dir_y, ray_dir_z,
+    // input logic [COORD_BIT_LEN:0]           camera_pos_x, camera_pos_y, camera_pos_z,
+    input logic signed [11:0]                      camera_pos_x, camera_pos_y, camera_pos_z,
     input logic [12:0]                      image_width, image_height,
     input logic                             ready_external,
     input logic [31:0]                      loop_index,
-    input logic [2:0]                       core_number,
     output logic [7:0]                      r, g, b,
     output logic                            ready_internal,                      // signal to go back to ray gen to tell it to generate new ray
     output logic                            valid_data_out,             // signal to next block/ buffer to read output from ray processor
@@ -21,7 +22,7 @@ module RayProcessor #(
     input logic [31:0]                      node,
     output logic [31:0]                     address,
     output logic                            ren,
-    output logic                            dir_valid
+    output logic                            valid_dir
 
 );
 
@@ -35,34 +36,50 @@ module RayProcessor #(
     // logic [31:0]                loop_index;                 // keep track of loop count
 
     // World setup
-    logic [COORD_BIT_LEN:0]     world_size;
-    logic [COORD_BIT_LEN:0]     oct_size;
-    logic [COORD_BIT_LEN-1:0]   world_max_x;
-    logic [COORD_BIT_LEN-1:0]   world_max_y;
-    logic [COORD_BIT_LEN-1:0]   world_max_z;
-    logic [COORD_BIT_LEN-1:0]   aabb_min_x;
-    logic [COORD_BIT_LEN-1:0]   aabb_min_y;
-    logic [COORD_BIT_LEN-1:0]   aabb_min_z;
-    logic [COORD_BIT_LEN-1:0]   aabb_max_x;
-    logic [COORD_BIT_LEN-1:0]   aabb_max_y;
-    logic [COORD_BIT_LEN-1:0]   aabb_max_z; 
+    // logic [COORD_BIT_LEN:0]     world_size;
+    // logic [COORD_BIT_LEN:0]     oct_size;
+    // logic [COORD_BIT_LEN-1:0]   world_max_x;
+    // logic [COORD_BIT_LEN-1:0]   world_max_y;
+    // logic [COORD_BIT_LEN-1:0]   world_max_z;
+    // logic [COORD_BIT_LEN-1:0]   aabb_min_x;
+    // logic [COORD_BIT_LEN-1:0]   aabb_min_y;
+    // logic [COORD_BIT_LEN-1:0]   aabb_min_z;
+    // logic [COORD_BIT_LEN-1:0]   aabb_max_x;
+    // logic [COORD_BIT_LEN-1:0]   aabb_max_y;
+    // logic [COORD_BIT_LEN-1:0]   aabb_max_z; 
 
-    reg signed [31:0]           reg_ray_dir_x;
-    reg signed [31:0]           reg_ray_dir_y;
-    reg signed [31:0]           reg_ray_dir_z;
+    logic signed [11:0]   world_size;
+    logic signed [11:0]   oct_size;
+    logic signed [11:0]   world_max_x;
+    logic signed [11:0]   world_max_y;
+    logic signed [11:0]   world_max_z;
+    logic signed [11:0]   aabb_min_x;
+    logic signed [11:0]   aabb_min_y;
+    logic signed [11:0]   aabb_min_z;
+    logic signed [11:0]   aabb_max_x;
+    logic signed [11:0]   aabb_max_y;
+    logic signed [11:0]   aabb_max_z; 
+
+    reg signed [11:0]           reg_ray_dir_x;
+    reg signed [11:0]           reg_ray_dir_y;
+    reg signed [11:0]           reg_ray_dir_z;
 
     reg                         underflow_x;
     reg                         underflow_y;
     reg                         underflow_z;
 
-    reg signed [31:0]           curr_ray_dir_x;  
-    reg signed [31:0]           curr_ray_dir_y;
-    reg signed [31:0]           curr_ray_dir_z;      
+    reg signed [11:0]           curr_ray_dir_x;  
+    reg signed [11:0]           curr_ray_dir_y;
+    reg signed [11:0]           curr_ray_dir_z;      
 
     // Ray setup.
-    logic [COORD_BIT_LEN-1:0]   ray_pos_x;
-    logic [COORD_BIT_LEN-1:0]   ray_pos_y;
-    logic [COORD_BIT_LEN-1:0]   ray_pos_z;
+    logic signed [11:0]   ray_pos_x;
+    logic signed [11:0]   ray_pos_y;
+    logic signed [11:0]   ray_pos_z;
+
+    // logic [COORD_BIT_LEN-1:0]   ray_pos_x;
+    // logic [COORD_BIT_LEN-1:0]   ray_pos_y;
+    // logic [COORD_BIT_LEN-1:0]   ray_pos_z;
 
     // Octree setup
     //logic [31:0]                node [0:7];
@@ -80,9 +97,13 @@ module RayProcessor #(
     logic                       just_outside_z;
 
 
-    logic [COORD_BIT_LEN-1:0]   temp_ray_pos_x;
-    logic [COORD_BIT_LEN-1:0]   temp_ray_pos_y;
-    logic [COORD_BIT_LEN-1:0]   temp_ray_pos_z;
+    // logic [COORD_BIT_LEN-1:0]   temp_ray_pos_x;
+    // logic [COORD_BIT_LEN-1:0]   temp_ray_pos_y;
+    // logic [COORD_BIT_LEN-1:0]   temp_ray_pos_z;
+
+    logic signed [11:0]   temp_ray_pos_x;
+    logic signed [11:0]   temp_ray_pos_y;
+    logic signed [11:0]   temp_ray_pos_z;
 
     reg signed [1:0]            normal_vec_x;
     reg signed [1:0]                 normal_vec_y;
@@ -121,7 +142,6 @@ module RayProcessor #(
     logic                       in_range;
 
     logic                       intermediate_ready;
-    
 
     typedef enum logic [4:0] { 
         NEW_FRAME,                      // 0
@@ -145,11 +165,11 @@ module RayProcessor #(
         SHADING_1,                      // 18
         SHADING_2,                      // 19
         SQRT_INIT,                      // 20
-        SQRT_INIT_BUFFER,               // 21
-        SQRT_ITER,                      // 22
-        SQRT_ITER_BUFFER,               // 23
-        SHADING_3_INIT,                 // 24
-        SHADING_3,                      // 25
+        SQRT_ITER,                      // 21
+        SQRT_ITER_BUFFER,               // 22
+        SHADING_3_INIT,                 // 23
+        SHADING_3,                      // 24
+        SHADING_3_BUFFER,               // 25
         SHADING_4,                      // 26
         RAY_OUT_OF_BOUND,               // 27
         OUTPUT_COLOUR_INIT,             // 28
@@ -174,7 +194,7 @@ module RayProcessor #(
                 // valid_data_out <= 0;
                 //ready_internal <= 1;
                 // last_x <= 0;
-                world_size <= 2**COORD_BIT_LEN;
+                world_size <= 12'd1024;
             end
             INITIALISE: begin // 1
 
@@ -228,8 +248,6 @@ module RayProcessor #(
                 received_material_id <= 0;
                 index <= COORD_BIT_LEN-1;
                 depth <= 0;
-                intermediate_ready <= 1;
-                valid <= 0;
                 /* verilator lint_on WIDTH */
 
                 // root address <= address in ROM of root 
@@ -350,9 +368,9 @@ module RayProcessor #(
                 just_outside_y <= (temp_ray_pos_y == aabb_min_y - 1 || temp_ray_pos_y == aabb_max_y + 1) ? 1 : 0;
                 just_outside_z <= (temp_ray_pos_z == aabb_min_z - 1 || temp_ray_pos_z == aabb_max_z + 1) ? 1 : 0;
 
-                within_world_x <= (temp_ray_pos_x + 1<= world_max_x) ? 1 : 0;
-                within_world_y <= (temp_ray_pos_y + 1<= world_max_y) ? 1 : 0;
-                within_world_z <= (temp_ray_pos_z + 1<= world_max_z) ? 1 : 0;
+                within_world_x <= ((temp_ray_pos_x <= world_max_x) && (temp_ray_pos_x >= 0)) ? 1 : 0; // NO 
+                within_world_y <= ((temp_ray_pos_y <= world_max_y) && (temp_ray_pos_y >= 0)) ? 1 : 0; // DONT DO THIS
+                within_world_z <= ((temp_ray_pos_z <= world_max_z) && (temp_ray_pos_z >= 0)) ? 1 : 0; // I THINK THIS MIGHT BE BREAKING IT 
 
                 in_range <= 0; 
 
@@ -377,42 +395,57 @@ module RayProcessor #(
 
                 // Block below: for more accurate direction vector.
 
-                if(reg_ray_dir_x == 1) begin
-                    underflow_x <= 1;
-                    if(underflow_x == 0 || (reg_ray_dir_y == 0 || reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1) ) begin
-                        reg_ray_dir_x <= 1;
-                    end
-                end
-                else begin
-                    reg_ray_dir_x <= reg_ray_dir_x >>> 1;
-                end
+                // if(reg_ray_dir_x == 1 || reg_ray_dir_x == -1) begin
+                //     underflow_x <= 1;
+                //     if(underflow_x == 0 || (reg_ray_dir_y == 0 && reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1) ) begin
+                //         if(reg_ray_dir_x == 1) begin
+                //             reg_ray_dir_x <= 1;
+                //         end
+                //         if(reg_ray_dir_x == -1) begin
+                //             reg_ray_dir_x <= -1;
+                //         end
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_x <= reg_ray_dir_x >>> 1;
+                // end
 
-                if(reg_ray_dir_y == 1) begin
-                    underflow_y <= 1;
-                    if(underflow_y == 0 || (reg_ray_dir_x == 0 || reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
-                        reg_ray_dir_y <= 1;
-                    end
-                end
-                else begin
-                    reg_ray_dir_y <= reg_ray_dir_y >>> 1;
-                end
+                // if(reg_ray_dir_y == 1 || reg_ray_dir_y == -1) begin
+                //     underflow_y <= 1;
+                //     if(underflow_y == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_z == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
+                //         if(reg_ray_dir_y == 1) begin
+                //             reg_ray_dir_y <= 1;
+                //         end
+                //         if(reg_ray_dir_y == -1) begin
+                //             reg_ray_dir_y <= -1;
+                //         end
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_y <= reg_ray_dir_y >>> 1;
+                // end
 
-                if(reg_ray_dir_z == 1) begin
-                    underflow_z <= 1;
-                    if(underflow_z == 0 || (reg_ray_dir_x == 0 || reg_ray_dir_y == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
-                        reg_ray_dir_z <= 1;
-                    end
-                end
-                else begin
-                    reg_ray_dir_z <= reg_ray_dir_z >>> 1;
-                end
+                // if(reg_ray_dir_z == 1 || reg_ray_dir_z == -1) begin
+                //     underflow_z <= 1;
+                //     if(underflow_z == 0 || (reg_ray_dir_x == 0 && reg_ray_dir_y == 0) || (underflow_x == 1 && underflow_y == 1 && underflow_z == 1)) begin
+                //         if(reg_ray_dir_z == 1) begin
+                //             reg_ray_dir_z <= 1;
+                //         end
+                //         if(reg_ray_dir_z == -1) begin
+                //             reg_ray_dir_z <= -1;
+                //         end
+                //     end
+                // end
+                // else begin
+                //     reg_ray_dir_z <= reg_ray_dir_z >>> 1;
+                // end
                 
                 
                 // Less accurate direction vector:
 
-                // reg_ray_dir_x <= (reg_ray_dir_x == 1) ? 1 : reg_ray_dir_x >>> 1;
-                // reg_ray_dir_y <= (reg_ray_dir_y == 1) ? 1 : reg_ray_dir_y >>> 1;
-                // reg_ray_dir_z <= (reg_ray_dir_z == 1) ? 1 : reg_ray_dir_z >>> 1;
+                reg_ray_dir_x <= (reg_ray_dir_x == 1) ? 1 : reg_ray_dir_x >>> 1;
+                reg_ray_dir_y <= (reg_ray_dir_y == 1) ? 1 : reg_ray_dir_y >>> 1;
+                reg_ray_dir_z <= (reg_ray_dir_z == 1) ? 1 : reg_ray_dir_z >>> 1;
                 
             end
             RAY_STEP_OUTSIDE: begin // 16
@@ -424,11 +457,11 @@ module RayProcessor #(
                 ray_pos_y <= temp_ray_pos_y;
                 ray_pos_z <= temp_ray_pos_z;
 
-                within_world_x <= (temp_ray_pos_x <= world_max_x) ? 1 : 0;
-                within_world_y <= (temp_ray_pos_y <= world_max_y) ? 1 : 0;
-                within_world_z <= (temp_ray_pos_z <= world_max_z) ? 1 : 0;
+                within_world_x <= ((temp_ray_pos_x <= world_max_x) && (temp_ray_pos_x >= 0)) ? 1 : 0;
+                within_world_y <= ((temp_ray_pos_y <= world_max_y) && (temp_ray_pos_y >= 0)) ? 1 : 0;
+                within_world_z <= ((temp_ray_pos_z <= world_max_z) && (temp_ray_pos_z >= 0)) ? 1 : 0;
 
-                within_world <= (temp_ray_pos_x <= world_max_x) && (temp_ray_pos_y <= world_max_y) && (temp_ray_pos_z <= world_max_z);
+                within_world <= ((temp_ray_pos_x <= world_max_x) && (temp_ray_pos_x >= 0)) && ((temp_ray_pos_y <= world_max_y) && (temp_ray_pos_y >= 0)) && ((temp_ray_pos_z <= world_max_z) && (temp_ray_pos_z >= 0));
 
                 depth <= 0;
                 address <= 0;
@@ -518,8 +551,8 @@ module RayProcessor #(
                 sqrt_res <= 0;
                 sqrt_bit <= 1 << 30;
             end
-            SQRT_INIT_BUFFER: begin
-            end
+            // SQRT_INIT_BUFFER: begin
+            // end
             SQRT_ITER: begin
                     if (sqrt_bit != 0) begin
                         sqrt_temp = sqrt_res + sqrt_bit;
@@ -546,42 +579,52 @@ module RayProcessor #(
                         normalized_light_dir_x <= normalized_light_dir_x >>> 10;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 10;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 10;
+                        sqrt_res <= sqrt_res >> 10;
                     end else if (sqrt_res >= 512) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 9;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 9;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 9;
+                        sqrt_res <= sqrt_res >> 9;
                     end else if (sqrt_res >= 256) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 8;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 8;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 8;
+                        sqrt_res <= sqrt_res >> 8;
                     end else if (sqrt_res >= 128) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 7;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 7;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 7;
+                        sqrt_res <= sqrt_res >> 7;
                     end else if (sqrt_res >= 64) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 6;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 6;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 6;
+                        sqrt_res <= sqrt_res >> 6;
                     end else if (sqrt_res >= 32) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 5;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 5;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 5;
+                        sqrt_res <= sqrt_res >> 5;
                     end else if (sqrt_res >= 16) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 4;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 4;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 4;
+                        sqrt_res <= sqrt_res >> 4;
                     end else if (sqrt_res >= 8) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 3;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 3;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 3;
+                        sqrt_res <= sqrt_res >> 3;
                     end else if (sqrt_res >= 4) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 2;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 2;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 2;
+                        sqrt_res <= sqrt_res >> 2;
                     end else if (sqrt_res >= 2) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 1;
                         normalized_light_dir_y <= normalized_light_dir_y >>> 1;
                         normalized_light_dir_z <= normalized_light_dir_z >>> 1;
+                        sqrt_res <= sqrt_res >> 1;
                     end else begin
                         normalized_light_dir_x <= normalized_light_dir_x; // No shift
                         normalized_light_dir_y <= normalized_light_dir_y; // No shift
@@ -593,7 +636,8 @@ module RayProcessor #(
                     normalized_light_dir_z <= 0;
                 end
             end
-
+            SHADING_3_BUFFER: begin
+            end
             SHADING_4: begin
                 brightness_factor <= (normalized_light_dir_x * normal_vec_x) + (normalized_light_dir_y * normal_vec_y) + (normalized_light_dir_z * normal_vec_z);
                 // brightness_factor <= $itor(normal_vec_x);
@@ -601,9 +645,9 @@ module RayProcessor #(
             RAY_OUT_OF_BOUND: begin // 18
                 
                 // INFO: Change background colour here
-                temp_r <= 0; 
-                temp_g <= 0; 
-                temp_b <= 0;
+                temp_r <= 155; 
+                temp_g <= 150; 
+                temp_b <= 105;
                 // loop_index <= loop_index + 1; 
 
             end
@@ -630,6 +674,7 @@ module RayProcessor #(
         ready_internal = 0;
         last_x = 0;
         sof = 0;
+        valid_dir = valid;
         case (state) 
             NEW_FRAME: begin // 0
                 next_state = INITIALISE;
@@ -645,10 +690,8 @@ module RayProcessor #(
             IDLE: begin // 2
                 if (valid) begin
                     next_state = RAY_TRAVERSE_INITIALISE;
-                    dir_valid = 1;
                 end else begin
                     next_state = IDLE;
-                    dir_valid = 0;
                 end
                 valid_data_out = 0;
 
@@ -714,9 +757,9 @@ module RayProcessor #(
                 next_state = STALL;
             end
             STALL: begin //14
-                if (!within_world) begin
-                    next_state = RAY_OUT_OF_BOUND;
-                end else if (just_outside_AABB) begin
+                // if (!within_world) begin
+                //     next_state = RAY_OUT_OF_BOUND;
+                if (just_outside_AABB) begin
                     next_state = RAY_STEP_OUTSIDE;
                 end else begin
                     next_state = RAY_STEP_INSIDE;
@@ -724,11 +767,7 @@ module RayProcessor #(
             end
             RAY_STEP_INSIDE: begin // 15
                 // next_state = (in_range) ? RAY_STEP_TEMP : RAY_STEP_TEMP;
-                if (in_range) begin
-                    next_state = RAY_STEP_TEMP;
-                end else begin
-                    next_state = RAY_STEP_TEMP;
-                end
+                next_state = RAY_STEP_TEMP;
             end
             RAY_STEP_OUTSIDE: begin // 16
                 // next_state = within_world ? RAY_TRAVERSE_INITIALISE : RAY_OUT_OF_BOUND;
@@ -739,7 +778,7 @@ module RayProcessor #(
                 end
             end
             COLOUR_FORMAT: begin // 17
-                next_state = SHADING_1;
+                next_state = SHADING_1; // CHANGE TO OUTPUT COLOUR INIT TO TURN OFF SHADING
             end
             SHADING_1: begin // 18
                 next_state = SHADING_2;
@@ -749,13 +788,6 @@ module RayProcessor #(
             end
             SQRT_INIT: begin // 20
                 next_state = SQRT_ITER;
-            end
-            SQRT_INIT_BUFFER: begin // 21
-                if (sqrt_bit > sqrt_input) begin
-                    next_state = SQRT_ITER;
-                end else begin
-                    next_state = SHADING_3_INIT;
-                end
             end
             SQRT_ITER: begin // 22
                 next_state = SQRT_ITER_BUFFER;
@@ -771,18 +803,25 @@ module RayProcessor #(
                 next_state = SHADING_3;
             end
             SHADING_3: begin // 25
-                next_state = SHADING_4;
+                next_state = SHADING_3_BUFFER;
             end
-            SHADING_4: begin // 26
+            SHADING_3_BUFFER: begin // 26
+                if (sqrt_res > 1) begin
+                    next_state = SHADING_3;
+                end else begin
+                    next_state = SHADING_4;
+                end
+            end
+            SHADING_4: begin // 27
                 next_state = OUTPUT_COLOUR_INIT;
             end
-            RAY_OUT_OF_BOUND: begin // 27
+            RAY_OUT_OF_BOUND: begin // 28
                 next_state = OUTPUT_COLOUR_INIT;
             end
-            OUTPUT_COLOUR_INIT: begin // 28
+            OUTPUT_COLOUR_INIT: begin // 29
                 next_state = OUTPUT_COLOUR;
             end
-            OUTPUT_COLOUR: begin // 29
+            OUTPUT_COLOUR: begin // 30
                 valid_data_out = 1;
                 if (ready_external) begin
                     if (loop_index >= image_height * image_width) begin
@@ -795,17 +834,17 @@ module RayProcessor #(
                     next_state = OUTPUT_COLOUR;
                 end
 
-                if ((loop_index - 3) % image_width == 0) begin
-                    last_x = 1;
-                end else begin
-                    last_x = 0;
-                end
+                // if (loop_index % image_width == 0) begin
+                //     last_x = 1;
+                // end else begin
+                //     last_x = 0;
+                // end
 
-                if (loop_index == 3) begin
-                    sof = 1;
-                end else begin
-                    sof = 0;
-                end
+                // if (loop_index == 8) begin
+                //     sof = 1;
+                // end else begin
+                //     sof = 0;
+                // end
 
             end
         // default: $stop;

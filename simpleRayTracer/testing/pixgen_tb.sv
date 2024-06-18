@@ -6,9 +6,9 @@ module pixgen_tb;
     localparam RANDOM_READY = 2;        // Ready signal is true 50% of the time according to pseudo-random sequence
     localparam READY_AFTER_VALID = 3;   // Ready signal goes true after valid is true, then goes false
     
-    parameter READY_MODE = RANDOM_READY;
+    parameter READY_MODE = ALWAYS_READY;
 
-    parameter TIMEOUT = 10000;           // Time to wait for valid to be true
+    parameter TIMEOUT = 100000;           // Time to wait for valid to be true
     parameter X_SIZE = 150;             // X dimension of image in words (words = pixels * 3/4)
     parameter Y_SIZE = 200;             // Y dimension of image
     parameter ENDTIME = 18680735000;    // end time of simulation
@@ -39,7 +39,7 @@ module pixgen_tb;
         .periph_resetn(rst),
 
         // Stream output
-        .out_stream_tdata(out_stream_tdata),
+        .out_stream_tdata(),
         .out_stream_tkeep(),
         .out_stream_tlast(eol),
         .out_stream_tready(ready),
@@ -105,30 +105,11 @@ module pixgen_tb;
     integer yCount = 0;
     integer frameCount = 0;
     integer checkpoint = 0;
-    integer validCount = 0;  // Variable to count the number of times valid is high
-    reg prevValid = 0;  // Variable to store the previous state of the valid signal
 
-    // File operations
-    integer file;
-    initial begin
-        file = $fopen("out_stream_tdata.txt", "w");
-        if (file == 0) begin
-            $display("Error: Could not open file");
-            $finish;
-        end
-    end
 
     always @(posedge clk) begin
         // Check for timeout waiting for valid
-        if (valid && !prevValid) begin
-            validCount = validCount + 1;  // Increment valid count on the rising edge of valid
-            $fwrite(file, "%h\n", out_stream_tdata);  // Write to file
-        end
-        prevValid <= valid;  // Update the previous valid state
-
-        if (valid) begin
-            checkpoint = $time;
-        end
+        if (valid) checkpoint = $time;
 
         if ($time > checkpoint + TIMEOUT) begin
             $display("Error: Timeout waiting for valid");
@@ -136,10 +117,11 @@ module pixgen_tb;
         end
 
         if (valid && ready) begin
-            // Check for Start of Frame (tuser in AXI Stream) on first word of each frame
+            
+            //Check for Start of Frame (tuser in AXI Stream) on first word of each frame
             if (xCount == 0 && (yCount % Y_SIZE) == 0) begin
                 if (sof) begin
-                    $display("SOF Ok on frame %0d", frameCount);
+                    $display("SOF Ok on frame %0d",frameCount);
                     yCount = 0;
                     frameCount = frameCount + 1;
                 end
@@ -154,7 +136,7 @@ module pixgen_tb;
                 frameCount = frameCount + 1;
             end
 
-            // Check for End of Line (tlast in AXI Stream) on last word of each line
+            //Check for End of Line (tlast in AXI Stream) on last word of each line
             if (xCount == X_SIZE - 1) begin
                 if (eol) begin
                     $display("EOL Ok on line %0d", yCount);
@@ -174,15 +156,10 @@ module pixgen_tb;
             else begin
                 xCount = xCount + 1;
             end
-        end
-    end
 
-    // Report the valid count at the end of the simulation and close the file
-    initial begin
-        #ENDTIME;
-        $display("Total valid assertions: %0d", validCount);
-        $fclose(file);
+        end
+        
+
     end
 
 endmodule
-

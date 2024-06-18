@@ -1,23 +1,28 @@
 module RayGenerator
 (
     input logic             clk, reset_n, ready_internal, ready_external, en,
-    input logic [10:0]      camera_pos_x, camera_pos_y, camera_pos_z,
-    input logic [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
-    input logic [10:0]      camera_right_x, camera_right_y, camera_right_z,
-    input logic [10:0]      camera_up_x, camera_up_y, camera_up_z,
+    input logic signed [11:0]      camera_pos_x, camera_pos_y, camera_pos_z,
+    input logic signed [11:0]      camera_dir_x, camera_dir_y, camera_dir_z,
+    input logic signed [11:0]      camera_right_x, camera_right_y, camera_right_z,
+    input logic signed [11:0]      camera_up_x, camera_up_y, camera_up_z,
+    // input logic signed [10:0]      camera_pos_x, camera_pos_y, camera_pos_z,
+    // input logic signed [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
+    // input logic signed [10:0]      camera_right_x, camera_right_y, camera_right_z,
+    // input logic signed [10:0]      camera_up_x, camera_up_y, camera_up_z,
     input logic [12:0]      image_width, image_height,
-    input logic             dir_valid,
 
     input logic [2:0]       core_number, 
     input logic [1:0]       op_code,
 
-    output logic [31:0]     ray_dir_x, ray_dir_y, ray_dir_z,
-    output logic [31:0]     loop_index
+    input logic             val_dir,
+
+    output logic signed [11:0]     ray_dir_x, ray_dir_y, ray_dir_z,
+    output logic signed [31:0]     loop_index
 );
 
     logic [2:0]             number_of_cores;
 
-    typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, UPDATE_LOOP } state_t;
+    typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, CHECK_VALID, UPDATE_LOOP } state_t;
 
     state_t state, next_state;
 
@@ -44,7 +49,7 @@ module RayGenerator
                     number_of_cores <= op_code + 1;
                 end 
                 CALCULATE_MU: begin
-                    // loop_index <= core_number + 1;
+                    // OLD
                 end
                 CALCULATE_IMAGE: begin
                     // OLD
@@ -58,6 +63,8 @@ module RayGenerator
                             ray_dir_y <= (camera_right_y * ((loop_index % image_width)-image_width/2)) + (camera_up_y * (image_height/2 - (loop_index / image_width))) + camera_dir_y;
                             ray_dir_z <= (camera_right_z * ((loop_index % image_width)-image_width/2)) + (camera_up_z * (image_height/2 - (loop_index / image_width))) + camera_dir_z;
                         end
+                end
+                CHECK_VALID: begin
                 end
                 UPDATE_LOOP: begin
                     loop_index <= loop_index + number_of_cores;
@@ -90,15 +97,17 @@ module RayGenerator
                 end
             end
             GENERATE_RAYS: begin // 4
-                // if (dir_valid) begin
-                //     next_state = UPDATE_LOOP;
-                // end else begin
-                //     next_state = GENERATE_RAYS;
-                // end
-                next_state = UPDATE_LOOP;
+                next_state = CHECK_VALID;
+            end
+            CHECK_VALID: begin
+                if (val_dir) begin
+                    next_state = UPDATE_LOOP;
+                end else begin
+                    next_state = STALL;
+                end
             end
             UPDATE_LOOP: begin // 5
-                if (loop_index > image_height * image_width - 1) begin
+                if (loop_index > image_height * image_width - number_of_cores) begin
                     next_state = IDLE;
                 end else begin
                     next_state = STALL;

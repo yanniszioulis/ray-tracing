@@ -7,6 +7,7 @@ module pixel_buffer (
 
     input logic       eol1, eol2,
     input logic       sof1, sof2,
+    input logic [31:0] loop_index_1, loop_index_2,
 
     input logic [12:0] image_width, image_height,
 
@@ -17,7 +18,7 @@ module pixel_buffer (
     output logic compute_ready_1,
     output logic compute_ready_2,
 
-    input logic in_stream_ready,
+    input logic in_stream_ready_buff,
 
     output logic [7:0] out_r,
     output logic [7:0] out_g,
@@ -41,7 +42,12 @@ module pixel_buffer (
     logic [7:0] pixel_buffer_b[MAX_CORES-1:0];
     logic EOL_buffer[MAX_CORES-1:0];
     logic SOF_buffer[MAX_CORES-1:0];
+    logic [31:0] loop_index_buffer[MAX_CORES-1:0];
     logic [MAX_CORES-1:0] pixel_buffer_valid;
+
+
+    // DEBUGGING
+    logic [31:0] x_count, y_count;
 
     // Current pixel index to be written next
     logic [$clog2(MAX_CORES)-1:0] current_pixel;
@@ -67,27 +73,29 @@ module pixel_buffer (
             end
 
             // Latching valid input pixels into buffer
-            if (valid1 && current_pixel == 0) begin
+            if (valid1 && (current_pixel == 0)) begin
                 pixel_buffer_r[0] <= r1;
                 pixel_buffer_g[0] <= g1;
                 pixel_buffer_b[0] <= b1;
                 EOL_buffer[0] <= eol1;
                 SOF_buffer[0] <= sof1;
+                loop_index_buffer[0] <= loop_index_1;
                 pixel_buffer_valid[0] <= 1'b1;
                 pixel_count <= pixel_count + 1;
             end
-            if (valid2 && current_pixel == 1) begin
+            if (valid2 && (current_pixel == 1)) begin
                 pixel_buffer_r[1] <= r2;
                 pixel_buffer_g[1] <= g2;
                 pixel_buffer_b[1] <= b2;
                 EOL_buffer[1] <= eol2;
                 SOF_buffer[1] <= sof2;
+                loop_index_buffer[1] <= loop_index_2;
                 pixel_buffer_valid[1] <= 1'b1;
                 pixel_count <= pixel_count + 1;
             end
 
             // Shifting buffer if pixel is written to packer
-            if (state == WRITE_PIXEL && in_stream_ready) begin
+            if (state == WRITE_PIXEL && in_stream_ready_buff) begin
                 pixel_buffer_valid[current_pixel] <= 1'b0;
                 if (current_pixel == no_of_extra_cores) begin
                     current_pixel <= 'b0;
@@ -124,13 +132,27 @@ module pixel_buffer (
             end
 
             WRITE_PIXEL: begin
-                if (in_stream_ready) begin
+                if (in_stream_ready_buff) begin
                     out_r = pixel_buffer_r[current_pixel];
                     out_g = pixel_buffer_g[current_pixel];
                     out_b = pixel_buffer_b[current_pixel];
-                    SOF_out = SOF_buffer[current_pixel];
-                    EOL_out = EOL_buffer[current_pixel];
+                    // SOF_out = SOF_buffer[current_pixel];
+                    // EOL_out = EOL_buffer[current_pixel];
                     out_valid = 1'b1;
+                    if(loop_index_buffer[current_pixel] % image_width == 0) begin
+                        EOL_out = 1;
+                    end 
+                    // else begin
+                    //     EOL_out = 0;
+                    // end
+
+                    if((loop_index_buffer[current_pixel]) == 1) begin
+                        SOF_out = 1;
+                    end 
+                    // else begin
+                    //     SOF_out = 0;
+                    // end
+                    // pixel_count = pixel_count + 1;
                     // if(pixel_count % image_width == 0) begin
                     //     EOL_out = 1;
                     // end else begin

@@ -12,9 +12,9 @@ module RayTracingUnit
 
     logic                       ReadyInternal1, ReadyInternal2;
     logic                       valid1, valid2;
-    logic [31:0]                dirX1, dirX2; 
-    logic [31:0]                dirY1, dirY2; 
-    logic [31:0]                dirZ1, dirZ2;
+    logic [11:0]                dirX1, dirX2; 
+    logic [11:0]                dirY1, dirY2; 
+    logic [11:0]                dirZ1, dirZ2;
     logic [31:0]                addr1;
     logic [31:0]                dout1;
     logic [31:0]                addr2;

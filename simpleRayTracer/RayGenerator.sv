@@ -14,7 +14,7 @@ module RayGenerator
     input logic [2:0]       core_number, 
     input logic [1:0]       op_code,
 
-    output logic signed [31:0]     ray_dir_x, ray_dir_y, ray_dir_z,
+    output logic signed [11:0]     ray_dir_x, ray_dir_y, ray_dir_z,
     output logic signed [31:0]     loop_index
 );
 

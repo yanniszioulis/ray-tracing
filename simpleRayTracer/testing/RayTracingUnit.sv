@@ -1,7 +1,7 @@
 module RayTracingUnit
 (
     input logic                 clk, reset,
-    input logic [10:0]          cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ, cameraRightX, cameraRightY, cameraRightZ, cameraUpX, cameraUpY, cameraUpZ,
+    input logic [11:0]          cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ, cameraRightX, cameraRightY, cameraRightZ, cameraUpX, cameraUpY, cameraUpZ,
     input logic [12:0]          imageWidth, imageHeight,
     input logic                 ReadyExternal,
     output logic                validRead, SOF_out, EOL_out,
@@ -12,9 +12,9 @@ module RayTracingUnit
 
     logic                       ReadyInternal1, ReadyInternal2;
     logic                       valid1, valid2;
-    logic [31:0]                dirX1, dirX2; 
-    logic [31:0]                dirY1, dirY2; 
-    logic [31:0]                dirZ1, dirZ2;
+    logic [11:0]                dirX1, dirX2; 
+    logic [11:0]                dirY1, dirY2; 
+    logic [11:0]                dirZ1, dirZ2;
     logic [31:0]                addr1;
     logic [31:0]                dout1;
     logic [31:0]                addr2;
@@ -26,7 +26,7 @@ module RayTracingUnit
     logic                       ready1, ready2;
     logic                       lastX1, lastX2;
     logic                       sof1, sof2;
-    logic                       dirValid1, dirValid2;
+    logic                       validDir1, validDir2;
 
     RayGenerator ray_generator1 
     (
@@ -55,7 +55,7 @@ module RayTracingUnit
         .op_code(2'b01),
         .core_number(3'b001),
         .en(1'b1),
-        .dir_valid(dirValid1)
+        .val_dir(validDir1)
     );
 
 
@@ -83,7 +83,7 @@ module RayTracingUnit
         .node(dout1),
         .ren(ren1),
         .loop_index(loopIndex1),
-        .dir_valid(dirValid1)
+        .valid_dir(validDir1)
     );
 
 
@@ -114,7 +114,7 @@ module RayTracingUnit
         .op_code(2'b01),
         .core_number(3'b010),
         .en(1'b1),
-        .dir_valid(dirValid2)
+        .val_dir(validDir2)
     );
 
 
@@ -142,7 +142,7 @@ module RayTracingUnit
         .node(dout2),
         .ren(ren2),
         .loop_index(loopIndex2),
-        .dir_valid(dirValid2)
+        .valid_dir(validDir2)
     );
 
 
@@ -172,7 +172,7 @@ module RayTracingUnit
         .no_of_extra_cores(2'b01),
         .compute_ready_1(ready1),
         .compute_ready_2(ready2),
-        .in_stream_ready(ReadyExternal),
+        .in_stream_ready_buff(ReadyExternal),
         .out_r(out_red),
         .out_g(out_green),
         .out_b(out_blue),
@@ -183,6 +183,8 @@ module RayTracingUnit
         .sof2(sof2),
         .SOF_out(SOF_out),
         .EOL_out(EOL_out),
+        .loop_index_1(loopIndex1),
+        .loop_index_2(loopIndex2),
         .image_height(imageHeight),
         .image_width(imageWidth)
     );

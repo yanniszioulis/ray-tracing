@@ -206,18 +206,18 @@ wire first;
 RayTracingUnit ray_tracing_unit (
     .clk(out_stream_aclk),
     .reset(~periph_resetn),
-    .cameraDirX(11'd0),  // Assign appropriate values
-    .cameraDirY(11'd0),  // Assign appropriate values
-    .cameraDirZ(11'd230),  // Assign appropriate values
-    .cameraPosX(11'd250),  // Assign appropriate values 
-    .cameraPosY(11'd512),  // Assign appropriate values
-    .cameraRightX(11'd1),
-    .cameraRightY(11'd0),
-    .cameraRightZ(11'd0),
-    .cameraUpX(11'd0),
-    .cameraUpY(11'd1),
-    .cameraUpZ(11'd0),
-    .cameraPosZ(11'd0),  // Assign appropriate values
+    .cameraDirX(12'd0),  // Assign appropriate values
+    .cameraDirY(12'd0),  // Assign appropriate values
+    .cameraDirZ(12'd230),  // Assign appropriate values
+    .cameraPosX(12'd250),  // Assign appropriate values 
+    .cameraPosY(12'd512),  // Assign appropriate values
+    .cameraRightX(12'd1),
+    .cameraRightY(12'd0),
+    .cameraRightZ(12'd0),
+    .cameraUpX(12'd0),
+    .cameraUpY(12'd1),
+    .cameraUpZ(12'd0),
+    .cameraPosZ(12'd0),  // Assign appropriate values
     .imageWidth(13'd200), // Assign appropriate values
     .imageHeight(13'd200), // Assign appropriate values
     .ReadyExternal(ready),
