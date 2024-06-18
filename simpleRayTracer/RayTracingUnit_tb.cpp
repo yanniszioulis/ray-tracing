@@ -25,19 +25,19 @@ int main(int argc, char** argv, char** env) {
     tfp->open("RayTracingUnit.vcd");
 
     // Initialize simulation inputs
-    int image_width = 500;
-    int image_height = 500;
+    int image_width = 600;
+    int image_height = 600;
     top->clk = 0;
     top->reset = 1;
-    top->cameraPosX = 260;
-    top->cameraPosY = 260;
+    top->cameraPosX = 550;
+    top->cameraPosY = 512;
     top->cameraPosZ = 400;
-    top->cameraDirX = 0;
+    top->cameraDirX = -100;
     top->cameraDirY = 0;
-    top->cameraDirZ = 75; // Assuming the camera is pointing in the positive z direction
-    top->cameraRightX = 1;
+    top->cameraDirZ = 0; // Assuming the camera is pointing in the positive z direction
+    top->cameraRightX = 0;
     top->cameraRightY = 0;
-    top->cameraRightZ = 0;
+    top->cameraRightZ = 1;
     top->cameraUpX = 0;
     top->cameraUpY = 1;
     top->cameraUpZ = 0;
@@ -60,7 +60,7 @@ int main(int argc, char** argv, char** env) {
 
     // Simulate for a number of cycles
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 65971000; i++) {
+    for (int i = 0; i < 559710000; i++) {
         // Toggle clock
         for (int clk = 0; clk<2; clk++) {
             tfp->dump(2*i+clk);

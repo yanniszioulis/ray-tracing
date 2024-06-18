@@ -1,11 +1,15 @@
 module RayGenerator
 (
     input logic             clk, reset_n, ready_internal, ready_external, en,
-    input logic signed [10:0]      camera_pos_x, camera_pos_y, camera_pos_z,
-    input logic signed [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
-    input logic signed [10:0]      camera_right_x, camera_right_y, camera_right_z,
-    input logic signed [10:0]      camera_up_x, camera_up_y, camera_up_z,
-    input logic signed [12:0]      image_width, image_height,
+    input logic signed [11:0]      camera_pos_x, camera_pos_y, camera_pos_z,
+    input logic signed [11:0]      camera_dir_x, camera_dir_y, camera_dir_z,
+    input logic signed [11:0]      camera_right_x, camera_right_y, camera_right_z,
+    input logic signed [11:0]      camera_up_x, camera_up_y, camera_up_z,
+    // input logic signed [10:0]      camera_pos_x, camera_pos_y, camera_pos_z,
+    // input logic signed [10:0]      camera_dir_x, camera_dir_y, camera_dir_z,
+    // input logic signed [10:0]      camera_right_x, camera_right_y, camera_right_z,
+    // input logic signed [10:0]      camera_up_x, camera_up_y, camera_up_z,
+    input logic [12:0]      image_width, image_height,
 
     input logic [2:0]       core_number, 
     input logic [1:0]       op_code,

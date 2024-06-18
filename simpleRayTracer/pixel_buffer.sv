@@ -44,7 +44,7 @@ module pixel_buffer (
     logic [MAX_CORES-1:0] pixel_buffer_valid;
 
     // Current pixel index to be written next
-    logic [$clog2(MAX_CORES)-1:0] current_pixel;
+    logic current_pixel;
 
     logic [31:0] pixel_count;
 
@@ -67,14 +67,14 @@ module pixel_buffer (
             end
 
             // Latching valid input pixels into buffer
-            if (valid1 && current_pixel == 0) begin
+            if (valid1 && (current_pixel == 0)) begin
                 pixel_buffer_r[0] <= r1;
                 pixel_buffer_g[0] <= g1;
                 pixel_buffer_b[0] <= b1;
                 pixel_buffer_valid[0] <= 1'b1;
                 pixel_count <= pixel_count + 1;
             end
-            if (valid2 && current_pixel == 1) begin
+            if (valid2 && (current_pixel == 1)) begin
                 pixel_buffer_r[1] <= r2;
                 pixel_buffer_g[1] <= g2;
                 pixel_buffer_b[1] <= b2;

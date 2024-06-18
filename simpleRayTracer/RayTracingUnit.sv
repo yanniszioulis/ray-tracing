@@ -1,7 +1,7 @@
 module RayTracingUnit
 (
     input logic                 clk, reset,
-    input logic [10:0]          cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ, cameraRightX, cameraRightY, cameraRightZ, cameraUpX, cameraUpY, cameraUpZ,
+    input logic [11:0]          cameraDirX, cameraDirY, cameraDirZ, cameraPosX, cameraPosY, cameraPosZ, cameraRightX, cameraRightY, cameraRightZ, cameraUpX, cameraUpY, cameraUpZ,
     input logic [12:0]          imageWidth, imageHeight,
     input logic                 ReadyExternal,
     output logic                validRead, SOF_out, EOL_out,
