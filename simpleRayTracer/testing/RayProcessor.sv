@@ -28,11 +28,11 @@ module RayProcessor #(
 
     // Logic for state transitions:
     logic                       valid;                      // whether an input vector is a valid direction vector
-    logic [1:0]                 received_material_id;       // check what material we have
+    logic [2:0]                 received_material_id;       // check what material we have
     logic                       dir_big_enough;             // logic to check whether the direction vector is big enough for the current octant
     logic                       just_outside_AABB;          // logic to see whether we are just outside an AABB
     logic                       within_world;               // check if the ray is in the given envrionment
-    
+    int abs_x, abs_y, abs_z;
     // logic [31:0]                loop_index;                 // keep track of loop count
 
     // World setup
@@ -331,7 +331,7 @@ module RayProcessor #(
 
                 /* verilator lint_off WIDTH */
 
-                received_material_id <= node[1:0];
+                received_material_id <= node[2:0];
 
                 // calculate magnitude 
 
@@ -486,17 +486,37 @@ module RayProcessor #(
             end
             COLOUR_FORMAT: begin // 17
                 case(received_material_id) 
-                    2'b01: begin
+                    3'b001: begin
+                        temp_r <= 82; 
+                        temp_g <= 45; 
+                        temp_b <= 23;
+                    end
+                    3'b010: begin
+                        temp_r <= 192; 
+                        temp_g <= 127; 
+                        temp_b <= 52;
+                    end
+                    3'b011 : begin
                         temp_r <= 255; 
                         temp_g <= 255; 
                         temp_b <= 255;
                     end
-                    2'b10: begin
-                        temp_r <= 255; 
+                    3'b100 : begin
+                        temp_r <= 0; 
                         temp_g <= 0; 
                         temp_b <= 0;
                     end
-                    2'b11 : begin
+                    3'b101 : begin
+                        temp_r <= 154; 
+                        temp_g <= 104; 
+                        temp_b <= 46;
+                    end
+                    3'b110 : begin
+                        temp_r <= 0; 
+                        temp_g <= 0; 
+                        temp_b <= 255;
+                    end
+                    3'b111 : begin
                         temp_r <= 0; 
                         temp_g <= 0; 
                         temp_b <= 255;
@@ -504,45 +524,190 @@ module RayProcessor #(
                     // default: $stop;
                 endcase
                 
+                abs_x = (ray_dir_x > 0) ? ray_dir_x : -ray_dir_x;
+                abs_y = (ray_dir_y > 0) ? ray_dir_y : -ray_dir_y;
+                abs_z = (ray_dir_z > 0) ? ray_dir_z : -ray_dir_z;
+
+                // Initialize normal vector to zero
+                normal_vec_x <= 0;
+                normal_vec_y <= 0;
+                normal_vec_z <= 0; 
+
+                
                 //loop_index <= loop_index + 1; 
 
             end
             SHADING_1: begin
-                if (ray_pos_x == aabb_min_x) begin
-                    normal_vec_x <= -1;
-                    normal_vec_y <= 0;
-                    normal_vec_z <= 0;
-                end else if (ray_pos_x == aabb_max_x) begin
-                    normal_vec_x <= 1;
-                    normal_vec_y <= 0;
-                    normal_vec_z <= 0;
-                end else if (ray_pos_y == aabb_min_y) begin
-                    normal_vec_x <= 0;
-                    normal_vec_y <= -1;
-                    normal_vec_z <= 0;
-                end else if (ray_pos_y == aabb_max_y) begin
-                    normal_vec_x <= 0;
-                    normal_vec_y <= 1;
-                    normal_vec_z <= 0;
-                end else if (ray_pos_z == aabb_min_z) begin
-                    normal_vec_x <= 0;
-                    normal_vec_y <= 0;
-                    normal_vec_z <= -1;
-                end else if (ray_pos_y == aabb_max_z) begin
-                    normal_vec_x <= 0;
-                    normal_vec_y <= 0;
-                    normal_vec_z <= 1;
+            if (abs_x >= abs_y && abs_x >= abs_z) begin
+                if (abs_y >= abs_z) begin
+                    if (ray_pos_x == aabb_min_x) begin
+                        normal_vec_x <= -1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_x == aabb_max_x) begin
+                        normal_vec_x <= 1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_y == aabb_min_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= -1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_y == aabb_max_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_z == aabb_min_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= -1;
+                    end else if (ray_pos_z == aabb_max_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 1;
+                    end
                 end else begin
-                    normal_vec_x <= 1;
-                    normal_vec_y <= 1;
-                    normal_vec_z <= 1;
+                    if (ray_pos_x == aabb_min_x) begin
+                        normal_vec_x <= -1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_x == aabb_max_x) begin
+                        normal_vec_x <= 1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_z == aabb_min_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= -1;
+                    end else if (ray_pos_z == aabb_max_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 1;
+                    end else if (ray_pos_y == aabb_min_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= -1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_y == aabb_max_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 1;
+                        normal_vec_z <= 0;
+                    end
                 end
+            end else if (abs_y >= abs_x && abs_y >= abs_z) begin
+                if (abs_x >= abs_z) begin
+                    if (ray_pos_y == aabb_min_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= -1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_y == aabb_max_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_x == aabb_min_x) begin
+                        normal_vec_x <= -1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_x == aabb_max_x) begin
+                        normal_vec_x <= 1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_z == aabb_min_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= -1;
+                    end else if (ray_pos_z == aabb_max_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 1;
+                    end
+                end else begin
+                    if (ray_pos_y == aabb_min_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= -1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_y == aabb_max_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_z == aabb_min_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= -1;
+                    end else if (ray_pos_z == aabb_max_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 1;
+                    end else if (ray_pos_x == aabb_min_x) begin
+                        normal_vec_x <= -1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_x == aabb_max_x) begin
+                        normal_vec_x <= 1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end
+                end
+            end else if (abs_z >= abs_x && abs_z >= abs_y) begin
+                if (abs_x >= abs_y) begin
+                    if (ray_pos_z == aabb_min_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= -1;
+                    end else if (ray_pos_z == aabb_max_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 1;
+                    end else if (ray_pos_x == aabb_min_x) begin
+                        normal_vec_x <= -1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_x == aabb_max_x) begin
+                        normal_vec_x <= 1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_y == aabb_min_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= -1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_y == aabb_max_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 1;
+                        normal_vec_z <= 0;
+                    end
+                end else begin
+                    if (ray_pos_z == aabb_min_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= -1;
+                    end else if (ray_pos_z == aabb_max_z) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 1;
+                    end else if (ray_pos_y == aabb_min_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= -1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_y == aabb_max_y) begin
+                        normal_vec_x <= 0;
+                        normal_vec_y <= 1;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_x == aabb_min_x) begin
+                        normal_vec_x <= -1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end else if (ray_pos_x == aabb_max_x) begin
+                        normal_vec_x <= 1;
+                        normal_vec_y <= 0;
+                        normal_vec_z <= 0;
+                    end
+                end
+            end
 
-            light_dir_x <= camera_pos_x - ray_pos_x;
-            light_dir_y <= camera_pos_y - ray_pos_y;
-            light_dir_z <= camera_pos_z - ray_pos_z;
+            light_dir_x <= (camera_pos_x - ray_pos_x);
+            light_dir_y <= (camera_pos_y - ray_pos_y);
+            light_dir_z <= (camera_pos_z - ray_pos_z);
 
             end
+
             SHADING_2: begin
                 magnitude_shading <= (light_dir_x**2 + light_dir_y**2 + light_dir_z**2);
                 sqrt_input <= (light_dir_x**2 + light_dir_y**2 + light_dir_z**2);
@@ -573,7 +738,7 @@ module RayProcessor #(
                 normalized_light_dir_z <= light_dir_z * 8096;
             end
             SHADING_3: begin
-                if (sqrt_res != 0) begin
+                if (sqrt_res >= 0) begin
                     // Approximate normalization using right shifts based on sqrt_res value
                     if (sqrt_res >= 1024) begin
                         normalized_light_dir_x <= normalized_light_dir_x >>> 10;
@@ -630,10 +795,6 @@ module RayProcessor #(
                         normalized_light_dir_y <= normalized_light_dir_y; // No shift
                         normalized_light_dir_z <= normalized_light_dir_z; // No shift
                     end
-                end else begin
-                    normalized_light_dir_x <= 0;
-                    normalized_light_dir_y <= 0;
-                    normalized_light_dir_z <= 0;
                 end
             end
             SHADING_3_BUFFER: begin
@@ -657,9 +818,9 @@ module RayProcessor #(
                     temp_b <= temp_b * brightness_factor;
             end
             OUTPUT_COLOUR: begin // 19
-                    r <= temp_r / 8096;
-                    g <= temp_g / 8096;
-                    b <= temp_b / 8096;
+                    r <= (temp_r / 8096) > 255 ? 255 : (temp_r / 8096);
+                    g <= (temp_g / 8096) > 255 ? 255 : (temp_g / 8096);
+                    b <= (temp_b / 8096) > 255 ? 255 : (temp_b / 8096);
                 // valid_data_out <= 1;
                 //ready_internal <= 1;
             end
@@ -695,12 +856,6 @@ module RayProcessor #(
                 end
                 valid_data_out = 0;
 
-                // if (loop_index == 0) begin
-                //     sof = 1;
-                // end else begin
-                //     sof = 0;
-                // end
-
                 if (intermediate_ready) begin 
                     ready_internal = 1;
                 end else begin
@@ -734,7 +889,7 @@ module RayProcessor #(
             end
             RAY_PREP_STEP: begin // 9
 
-                if (received_material_id != 2'b00) begin
+                if (received_material_id != 3'b000) begin
                     next_state = COLOUR_FORMAT;
                 end else begin
                     next_state = RAY_STEP_ADJUST_DIR_VEC;
@@ -833,18 +988,6 @@ module RayProcessor #(
                 end else begin
                     next_state = OUTPUT_COLOUR;
                 end
-
-                // if (loop_index % image_width == 0) begin
-                //     last_x = 1;
-                // end else begin
-                //     last_x = 0;
-                // end
-
-                // if (loop_index == 8) begin
-                //     sof = 1;
-                // end else begin
-                //     sof = 0;
-                // end
 
             end
         // default: $stop;

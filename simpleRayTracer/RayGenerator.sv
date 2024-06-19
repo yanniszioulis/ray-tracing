@@ -14,13 +14,15 @@ module RayGenerator
     input logic [2:0]       core_number, 
     input logic [1:0]       op_code,
 
+    input logic             val_dir,
+
     output logic signed [11:0]     ray_dir_x, ray_dir_y, ray_dir_z,
     output logic signed [31:0]     loop_index
 );
 
     logic [2:0]             number_of_cores;
 
-    typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, UPDATE_LOOP } state_t;
+    typedef enum logic [2:0] { IDLE, CALCULATE_MU, CALCULATE_IMAGE, STALL, GENERATE_RAYS, CHECK_VALID, UPDATE_LOOP } state_t;
 
     state_t state, next_state;
 
@@ -43,7 +45,7 @@ module RayGenerator
                     ray_dir_x <= 0;
                     ray_dir_y <= 0;
                     ray_dir_z <= 0;
-                    loop_index <= core_number + 1;
+                    loop_index <= core_number;
                     number_of_cores <= op_code + 1;
                 end 
                 CALCULATE_MU: begin
@@ -61,6 +63,8 @@ module RayGenerator
                             ray_dir_y <= (camera_right_y * ((loop_index % image_width)-image_width/2)) + (camera_up_y * (image_height/2 - (loop_index / image_width))) + camera_dir_y;
                             ray_dir_z <= (camera_right_z * ((loop_index % image_width)-image_width/2)) + (camera_up_z * (image_height/2 - (loop_index / image_width))) + camera_dir_z;
                         end
+                end
+                CHECK_VALID: begin
                 end
                 UPDATE_LOOP: begin
                     loop_index <= loop_index + number_of_cores;
@@ -93,7 +97,14 @@ module RayGenerator
                 end
             end
             GENERATE_RAYS: begin // 4
-                next_state = UPDATE_LOOP;
+                next_state = CHECK_VALID;
+            end
+            CHECK_VALID: begin
+                if (val_dir) begin
+                    next_state = UPDATE_LOOP;
+                end else begin
+                    next_state = STALL;
+                end
             end
             UPDATE_LOOP: begin // 5
                 if (loop_index > image_height * image_width - number_of_cores) begin

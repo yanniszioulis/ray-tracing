@@ -19,13 +19,14 @@ module RayTracingUnit
     logic [31:0]                dout1;
     logic [31:0]                addr2;
     logic [31:0]                dout2;
-    logic                       ren;
+    logic                       ren1, ren2;
     logic [7:0]                 red1, green1, blue1;
     logic [7:0]                 red2, green2, blue2;
     logic [31:0]                loopIndex1, loopIndex2;
     logic                       ready1, ready2;
     logic                       lastX1, lastX2;
     logic                       sof1, sof2;
+    logic                       validDir1, validDir2;
 
     RayGenerator ray_generator1 
     (
@@ -53,7 +54,8 @@ module RayTracingUnit
         .loop_index(loopIndex1),
         .op_code(2'b01),
         .core_number(3'b001),
-        .en(1'b1)
+        .en(1'b1),
+        .val_dir(validDir1)
     );
 
 
@@ -79,8 +81,9 @@ module RayTracingUnit
         .sof(sof1),
         .address(addr1),
         .node(dout1),
-        .ren(ren),
-        .loop_index(loopIndex1)
+        .ren(ren1),
+        .loop_index(loopIndex1),
+        .valid_dir(validDir1)
     );
 
 
@@ -110,7 +113,8 @@ module RayTracingUnit
         .loop_index(loopIndex2),
         .op_code(2'b01),
         .core_number(3'b010),
-        .en(1'b1)
+        .en(1'b1),
+        .val_dir(validDir2)
     );
 
 
@@ -136,8 +140,9 @@ module RayTracingUnit
         .sof(sof2),
         .address(addr2),
         .node(dout2),
-        .ren(ren),
-        .loop_index(loopIndex2)
+        .ren(ren2),
+        .loop_index(loopIndex2),
+        .valid_dir(validDir2)
     );
 
 
@@ -148,7 +153,8 @@ module RayTracingUnit
         .dout1(dout1),
         .addr2(addr2),
         .dout2(dout2),
-        .ren(ren)
+        .ren1(ren1),
+        .ren2(ren2)
     );
 
     pixel_buffer pixel_buffer
@@ -163,10 +169,10 @@ module RayTracingUnit
         .b2(blue2),
         .valid1(valid1),
         .valid2(valid2),
-        .no_of_extra_cores(2'b11),
+        .no_of_extra_cores(2'b01),
         .compute_ready_1(ready1),
         .compute_ready_2(ready2),
-        .in_stream_ready(ReadyExternal),
+        .in_stream_ready_buff(ReadyExternal),
         .out_r(out_red),
         .out_g(out_green),
         .out_b(out_blue),
@@ -176,7 +182,11 @@ module RayTracingUnit
         .sof1(sof1),
         .sof2(sof2),
         .SOF_out(SOF_out),
-        .EOL_out(EOL_out)
+        .EOL_out(EOL_out),
+        .loop_index_1(loopIndex1),
+        .loop_index_2(loopIndex2),
+        .image_height(imageHeight),
+        .image_width(imageWidth)
     );
 
 endmodule

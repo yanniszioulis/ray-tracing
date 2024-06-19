@@ -21,8 +21,8 @@ module RayProcessor #(
     output logic                            sof,
     input logic [31:0]                      node,
     output logic [31:0]                     address,
-    output logic                            ren
-
+    output logic                            ren,
+    output logic                            valid_dir
 );
 
     // Logic for state transitions:
@@ -832,6 +832,7 @@ module RayProcessor #(
         ready_internal = 0;
         last_x = 0;
         sof = 0;
+        valid_dir = valid;
         case (state) 
             NEW_FRAME: begin // 0
                 next_state = INITIALISE;
@@ -851,12 +852,6 @@ module RayProcessor #(
                     next_state = IDLE;
                 end
                 valid_data_out = 0;
-
-                // if (loop_index == 0) begin
-                //     sof = 1;
-                // end else begin
-                //     sof = 0;
-                // end
 
                 if (intermediate_ready) begin 
                     ready_internal = 1;
@@ -989,18 +984,6 @@ module RayProcessor #(
                     end
                 end else begin
                     next_state = OUTPUT_COLOUR;
-                end
-
-                if ((loop_index - 1 ) % image_width == 0) begin
-                    last_x = 1;
-                end else begin
-                    last_x = 0;
-                end
-
-                if (loop_index == 8) begin
-                    sof = 1;
-                end else begin
-                    sof = 0;
                 end
 
             end

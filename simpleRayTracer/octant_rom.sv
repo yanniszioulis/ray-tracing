@@ -5,7 +5,7 @@ module octant_rom #(
     input   logic                       clk,
     input   logic   [ADDRESS_WIDTH-1:0] addr1, addr2,
     output  logic   [DATA_WIDTH-1:0]    dout1, dout2,
-    input   logic                       ren
+    input   logic                       ren1, ren2
 );
 
 logic   [DATA_WIDTH-1:0] rom_array [37602:0];
@@ -46028,7 +46028,7 @@ initial begin
 end
 
 always_ff @(posedge clk) begin
-    if(ren) begin
+    if(ren1 || ren2) begin
         dout1 <= rom_array[addr1];
         dout2 <= rom_array[addr2];
     end
