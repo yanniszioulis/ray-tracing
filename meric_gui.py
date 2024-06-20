@@ -6,9 +6,9 @@ import threading
 from pygame.locals import *
 
 # Initial camera parameters
-initial_camera_pos = np.array([250, 512, 0], dtype=np.int32)
-initial_camera_front = np.array([0, 0, 230], dtype=np.float32)
-initial_camera_up = np.array([0, 1, 0], dtype=np.float32)
+initial_camera_pos = np.array([450, 600, 300], dtype=np.int32)
+initial_camera_front = np.array([0, 0, 90], dtype=np.float32)
+initial_camera_up = np.array([0, 1, 0], dtype=np.int32)
 up_vector = np.array([0, 1, 0], dtype=np.int32)
 right_vector = np.array([1, 0, 0], dtype=np.int32)
 
@@ -66,40 +66,64 @@ selected_environment = "Environment 1"  # Default selected environment
 
 # Define camera settings with preset parameters
 camera_settings = {
-    "Setting 1": {
+    "Preset: Z +ve": {
         "camera_pos": [250, 512, 0],
-        "camera_front": [0, 0, 230]
+        "camera_front": [0, 0, 100],
+        "right_vector": [1, 0, 0],
+        "up_vector": [0, 1, 0]
     },
-    "Setting 2": {
-        "camera_pos": [150, 400, 50],
-        "camera_front": [50, 50, 200]
+    "Preset: Z -ve": {
+        "camera_pos": [250, 512, 760],
+        "camera_front": [0, 0, -100],
+        "right_vector": [-1, 0, 0],
+        "up_vector": [0, 1, 0]
     },
-    "Setting 3": {
-        "camera_pos": [350, 500, 100],
-        "camera_front": [0, 100, 150]
+    "Preset: Y +ve": {
+        "camera_pos": [250, 512, 0],
+        "camera_front": [0, 1, 0],
+        "right_vector": [1, 0, 0],
+        "up_vector": [0, 0, -1]
+    },
+    "Preset: Y -ve": {
+        "camera_pos": [250, 512, 0],
+        "camera_front": [0, -100, 0],
+        "right_vector": [1, 0, 0],
+        "up_vector": [0, 0, 1]
+    },
+    "Preset: X +ve": {
+        "camera_pos": [250, 512, 0],
+        "camera_front": [100, 0, 0],
+        "right_vector": [0, 0, -1],
+        "up_vector": [0, 1, 0]
+    },
+    "Preset: X -ve": {
+        "camera_pos": [250, 512, 0],
+        "camera_front": [-100, 0, 0],
+        "right_vector": [0, 0, 1],
+        "up_vector": [0, 1, 0]
     }
 }
 
-selected_camera_setting = "Setting 1"  # Default selected camera setting
+selected_camera_setting = "Preset: Z +ve"  # Default selected camera setting
 
 # Initialize pygame and create window
 def initialize():
     global font
     pygame.init()
-    pygame.display.set_caption("3D Camera Control")
+    pygame.display.set_caption("FPGA Ray Tracer")
     font = pygame.font.Font(None, 24)
-    return pygame.display.set_mode((1300, 900))
+    return pygame.display.set_mode((1300, 1080))
 
 # Draw a grid of squares for RGB selection
 def draw_color_grid(screen):
-    grid_size = 20
+    grid_size = 30
     rows = 10
     cols = 10
-    start_x, start_y = 1050, 100
+    start_x, start_y = 950, 70
 
     # Draw "Background color" text
     color_text = font.render("Background color", True, (255, 255, 255))
-    screen.blit(color_text, (1050, 70))
+    screen.blit(color_text, (1050, 40))
 
     for row in range(rows):
         for col in range(cols):
@@ -138,10 +162,10 @@ def hsv_to_rgb(h, s, v):
 
 def handle_grid_click(mouse_pos):
     global camera_params_changed, frame_background_color
-    grid_size = 20
+    grid_size = 30
     rows = 10
     cols = 10
-    start_x, start_y = 1050, 100
+    start_x, start_y = 950, 70
 
     for row in range(rows):
         for col in range(cols):
@@ -207,7 +231,7 @@ def send_camera_parameters(client_socket):
     regfile_4_int = int(regfile_4, 2)
     regfile_5_int = int(regfile_5, 2)
     regfile_6_int = int(regfile_6, 2)
-    print("COLOR: " , frame_background_color[0],frame_background_color[1],frame_background_color[2])
+    print("COLOR: ", frame_background_color[0], frame_background_color[1], frame_background_color[2])
 
     # Pack the integers as bytes and send them
     data = struct.pack(
@@ -240,38 +264,53 @@ def draw_sliders(screen):
     camera_pos_labels = ['X', 'Y', 'Z']
     for i in range(3):
         label = font.render(f"Camera Position {camera_pos_labels[i]}:", True, (255, 255, 255))
-        screen.blit(label, (10, 560 + i * 60))
-        pygame.draw.rect(screen, slider_color, (200, 560 + i * 60, 300, 20))
-        handle_x = 200 + int(camera_pos[i] / 1023 * 300)
-        pygame.draw.rect(screen, slider_handle_color, (handle_x, 555 + i * 60, 10, 30))
+        screen.blit(label, (10, 610 + i * 60))
+        pygame.draw.rect(screen, slider_color, (200, 610 + i * 60, 600, 20))  # Adjust width for visual clarity
+        handle_x = 200 + int((camera_pos[i] / 1023) * 600)  # Range from 0 to 600
+        pygame.draw.rect(screen, slider_handle_color, (handle_x, 605 + i * 60, 10, 30))
 
     # Camera Direction Sliders
     camera_dir_labels = ['X', 'Y', 'Z']
     for i in range(3):
         label = font.render(f"Camera Direction {camera_dir_labels[i]}:", True, (255, 255, 255))
-        screen.blit(label, (10, 740 + i * 60))
-        pygame.draw.rect(screen, slider_color, (200, 740 + i * 60, 300, 20))
-        handle_x = 200 + int(camera_front[i] / 1023 * 300)
-        pygame.draw.rect(screen, slider_handle_color, (handle_x, 735 + i * 60, 10, 30))
+        screen.blit(label, (10, 790 + i * 60))
+        pygame.draw.rect(screen, slider_color, (200, 790 + i * 60, 600, 20))  # Adjust width for visual clarity
+        handle_x = 200 + int((camera_front[i] / 1023 + 1) * 300)  # Center at 300 for 0 value
+        pygame.draw.rect(screen, slider_handle_color, (handle_x, 785 + i * 60, 10, 30))
+
+    # Camera Magnitude Slider
+    label = font.render("Camera Magnitude:", True, (255, 255, 255))
+    screen.blit(label, (10, 970))
+    pygame.draw.rect(screen, slider_color, (200, 970, 600, 20))
+    handle_x = 200 + int((np.linalg.norm(camera_front) / 1023) * 600)  # Range from 0 to 600
+    pygame.draw.rect(screen, slider_handle_color, (handle_x, 965, 10, 30))
 
 def handle_slider_click(mouse_pos):
     global camera_params_changed
-    slider_width = 300
+    slider_width = 600  # Adjusted width
     slider_start_x = 200
 
     # Camera Position Sliders
     for i in range(3):
-        if 560 + i * 60 <= mouse_pos[1] <= 580 + i * 60:
-            camera_pos[i] = int((mouse_pos[0] - slider_start_x) / slider_width * 1023)
-            camera_pos[i] = np.clip(camera_pos[i], 0, 1023)
+        if 610 + i * 60 <= mouse_pos[1] <= 630 + i * 60:
+            value = int((mouse_pos[0] - slider_start_x) / slider_width * 1023)  # Only positive range
+            camera_pos[i] = np.clip(value, 0, 1023)  # Ensure non-negative values
             camera_params_changed = True
 
     # Camera Direction Sliders
     for i in range(3):
-        if 740 + i * 60 <= mouse_pos[1] <= 760 + i * 60:
-            camera_front[i] = int((mouse_pos[0] - slider_start_x) / slider_width * 1023)
-            camera_front[i] = np.clip(camera_front[i], 0, 1023)
+        if 790 + i * 60 <= mouse_pos[1] <= 810 + i * 60:
+            value = int((mouse_pos[0] - slider_start_x) / slider_width * 2046) - 1023  # Adjust for negative range
+            camera_front[i] = np.clip(value, -1023, 1023)
             camera_params_changed = True
+
+    # Camera Magnitude Slider
+    if 970 <= mouse_pos[1] <= 990:
+        magnitude = int((mouse_pos[0] - slider_start_x) / slider_width * 1023)
+        magnitude = np.clip(magnitude, 0, 1023)
+        camera_front_normalized = camera_front / np.linalg.norm(camera_front)
+        camera_front[:] = (camera_front_normalized * magnitude).astype(np.int32)
+        camera_params_changed = True
 
 # Thread function to handle receiving frames from the server
 def receive_frames(client_socket):
@@ -302,19 +341,22 @@ def send_camera_parameters_periodically(client_socket):
 
 # Process keyboard input for camera movement
 def process_keyboard_input(keys):
-    global camera_pos, camera_params_changed
+    global camera_pos, camera_params_changed, camera_front, right_vector, up_vector
     if keys[K_w]:
-        camera_pos[:] += (camera_front // np.linalg.norm(camera_front) * movement_speed).astype(np.int32)
+        camera_pos[:] += (camera_front / np.linalg.norm(camera_front) * movement_speed).astype(np.int32)
         camera_params_changed = True
     if keys[K_s]:
-        camera_pos[:] -= (camera_front // np.linalg.norm(camera_front) * movement_speed).astype(np.int32)
+        camera_pos[:] -= (camera_front / np.linalg.norm(camera_front) * movement_speed).astype(np.int32)
         camera_params_changed = True
     if keys[K_a]:
-        camera_pos[:] -= (np.cross(camera_front, camera_up) // np.linalg.norm(np.cross(camera_front, camera_up)) * movement_speed).astype(np.int32)
+        camera_pos[:] -= (right_vector / np.linalg.norm(right_vector) * movement_speed).astype(np.int32)
         camera_params_changed = True
     if keys[K_d]:
-        camera_pos[:] += (np.cross(camera_front, camera_up) // np.linalg.norm(np.cross(camera_front, camera_up)) * movement_speed).astype(np.int32)
+        camera_pos[:] += (right_vector / np.linalg.norm(right_vector) * movement_speed).astype(np.int32)
         camera_params_changed = True
+
+    # Clamp the camera position values to be non-negative
+    camera_pos[:] = np.clip(camera_pos, 0, None)
 
 # Process mouse input for camera direction
 def process_mouse(mouse_rel):
@@ -407,13 +449,12 @@ def handle_dropdown_click(mouse_pos, dropdown_rect, dropdown_type, screen, clien
                             if item_rect.collidepoint(event.pos):
                                 if dropdown_type == "environment":
                                     selected_environment = item
-                                    camera_pos[:] = environments[item]["camera_pos"]
-                                    camera_front[:] = environments[item]["camera_front"]
-                                    send_camera_parameters(client_socket)
                                 elif dropdown_type == "camera_setting":
                                     selected_camera_setting = item
                                     camera_pos[:] = camera_settings[item]["camera_pos"]
                                     camera_front[:] = camera_settings[item]["camera_front"]
+                                    up_vector[:] = camera_settings[item]["up_vector"]
+                                    right_vector[:] = camera_settings[item]["right_vector"]
                                     send_camera_parameters(client_socket)
                                 dropdown_open = False
                         pygame.draw.rect(screen, background_color, menu_rect)
@@ -490,6 +531,8 @@ def main():
                         camera_front[:] = initial_camera_front
                         yaw = -90
                         pitch = 0
+                        up_vector[:] = [0, 1, 0]
+                        right_vector[:] = [1, 0, 0]
                         send_camera_parameters(client_socket)
                     else:
                         new_color = handle_grid_click(pygame.mouse.get_pos())
@@ -512,6 +555,11 @@ def main():
         # Display camera position and direction on the game screen
         display_camera_info(screen)
 
+        # Display the frame received from the server
+        if frame_surface:
+            frame_pos_x = (screen.get_width() - frame_surface.get_width()) // 2
+            screen.blit(frame_surface, (frame_pos_x, 70))
+
         # Draw the grid pattern for RGB selection
         draw_color_grid(screen)
 
@@ -521,11 +569,6 @@ def main():
         # Draw the dropdown menus
         draw_dropdown_menu(screen, "environment")
         draw_dropdown_menu(screen, "camera_setting")
-
-        # Display the frame received from the server
-        if frame_surface:
-            frame_pos_x = (screen.get_width() - frame_surface.get_width()) // 2
-            screen.blit(frame_surface, (frame_pos_x, 50))
 
         # Draw buttons
         pygame.draw.rect(screen, button_background_color, horizontal_flip_button)
