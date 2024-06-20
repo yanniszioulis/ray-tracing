@@ -5,11 +5,16 @@ import struct
 
 def set_camera_params(pixgen, params):
     # Unpack the data
-    regfile_0, regfile_1 = struct.unpack('II', params[:8])
+    regfile_0, regfile_1, regfile_2, regfile_3, regfile_4, regfile_5, regfile_6 = struct.unpack('IIIIIII', params[:28])
 
     # Set the parameters in the registers
     pixgen.register_map.gp0 = regfile_0
     pixgen.register_map.gp1 = regfile_1
+    pixgen.register_map.gp2 = regfile_2
+    pixgen.register_map.gp3 = regfile_3
+    pixgen.register_map.gp4 = regfile_4
+    pixgen.register_map.gp5 = regfile_5
+    pixgen.register_map.gp6 = regfile_6
 
     print("Received data:")
     print(f"Camera Direction (hex): {regfile_0:08X}")
@@ -17,7 +22,7 @@ def set_camera_params(pixgen, params):
 
 def start_server():
     # Load the overlay
-    overlay = Overlay("/home/xilinx/jupyter_notebooks/base.bit")
+    overlay = Overlay("/home/xilinx/jupyter_notebooks/house.bit")
     print('Overlay loaded.')
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,25 +44,27 @@ def start_server():
             pixgen.register_map.gp4 = 0x00000000
 
             imgen_vdma = overlay.video.axi_vdma_0.readchannel
-            videoMode = common.VideoMode(640, 480, 24)
+            videoMode = common.VideoMode(512, 512, 24)
             imgen_vdma.mode = videoMode
             imgen_vdma.start()
             print('VDMA started.')
 
             while True:
-                data = client_socket.recv(8)
+                data = client_socket.recv(28)
                 if not data:
                     break
 
                 # Set the camera parameters in the register map
                 set_camera_params(pixgen, data)
+             
                 print(pixgen.register_map)
                 
                 # Read the frame 4 times
                 for _ in range(4):
                     frame = imgen_vdma.readframe()
+                    print("reading frame for ", _ , " time")
                 frame_data = frame.tobytes()
-
+                print("frame completed")
                 # Send the frame data to the client
                 client_socket.sendall(frame_data)
 
