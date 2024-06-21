@@ -39,4 +39,4 @@ A complete report for the project can be found [here](report.pdf).
 
 ### Note:
 - To view previous versions of files, view the `main` and `testing` branches.
-- To see complete testing, and testing of a the current `RayTracingUnit` within the provided modules: `pixel_generator.sv` and `packer.sv`, view the test bench located in `simpleRayTracer/testing/`.
+- To see complete testing, and testing of the current `RayTracingUnit` within the provided modules: `pixel_generator.sv` and `packer.sv`, view the test bench located in `simpleRayTracer/testing/`.
