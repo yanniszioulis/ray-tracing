@@ -1,8 +1,8 @@
 .vscode
 
-simpleRayTracer/obj_dir
+rtl/obj_dir
 
-simpleRayTracer/*.vcd
+rtl/*.vcd
 
 simpleRayTracer/myenv
 
