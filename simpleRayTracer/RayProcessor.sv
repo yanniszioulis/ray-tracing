@@ -4,8 +4,7 @@ This module will take as input the direction vector of a ray and position of the
 */
 
 module RayProcessor #(
-    parameter COORD_BIT_LEN = 10,
-    parameter OCTANT_BIT_LEN = 10
+    parameter COORD_BIT_LEN = 10
 )(
     input logic                             clk, reset_n,
     input logic signed [11:0]               ray_dir_x, ray_dir_y, ray_dir_z,
@@ -23,6 +22,7 @@ module RayProcessor #(
     output logic [31:0]                     address,
     output logic                            ren,
     output logic                            valid_dir
+
 );
 
     // Logic for state transitions:
@@ -32,7 +32,6 @@ module RayProcessor #(
     logic                       just_outside_AABB;          // logic to see whether we are just outside an AABB
     logic                       within_world;               // check if the ray is in the given envrionment
     int abs_x, abs_y, abs_z;
-    
     // logic [31:0]                loop_index;                 // keep track of loop count
 
     // World setup
@@ -194,7 +193,8 @@ module RayProcessor #(
                 // valid_data_out <= 0;
                 //ready_internal <= 1;
                 // last_x <= 0;
-                world_size <= 12'd1024;
+                world_size <= 12'd1024; // COORD BIT LENGTH 
+                valid <= 0;
             end
             INITIALISE: begin // 1
 
@@ -260,12 +260,9 @@ module RayProcessor #(
                 
                 // valid_data_out <= 0;
 
-                if (ray_dir_z == 0) begin
+                if( (ray_dir_x == 0) && (ray_dir_y == 0) && (ray_dir_z == 0) ) begin 
                     valid <= 0;
                     intermediate_ready <= 1;
-                end else if (loop_index == 0 && ((ray_dir_x == 0) || (ray_dir_y == 0))) begin 
-                    valid <= 0;
-                    intermediate_ready <= 0;
                 end else begin 
                     valid <= 1;
                     intermediate_ready <= 0;
@@ -533,9 +530,11 @@ module RayProcessor #(
                 normal_vec_y <= 0;
                 normal_vec_z <= 0; 
 
+                
+                //loop_index <= loop_index + 1; 
+
             end
             SHADING_1: begin
-            // Determine the largest component and prioritize checks
             if (abs_x >= abs_y && abs_x >= abs_z) begin
                 if (abs_y >= abs_z) begin
                     if (ray_pos_x == aabb_min_x) begin
@@ -705,6 +704,7 @@ module RayProcessor #(
             light_dir_z <= (camera_pos_z - ray_pos_z);
 
             end
+
             SHADING_2: begin
                 magnitude_shading <= (light_dir_x**2 + light_dir_y**2 + light_dir_z**2);
                 sqrt_input <= (light_dir_x**2 + light_dir_y**2 + light_dir_z**2);
@@ -976,7 +976,7 @@ module RayProcessor #(
             OUTPUT_COLOUR: begin // 30
                 valid_data_out = 1;
                 if (ready_external) begin
-                    if (loop_index >= image_height * image_width) begin
+                    if (loop_index == 1 || loop_index == 2) begin // number of cores
                         next_state = NEW_FRAME;
                     end else begin
                         next_state = INITIALISE;

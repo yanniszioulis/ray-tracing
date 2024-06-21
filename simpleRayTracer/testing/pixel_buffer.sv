@@ -146,7 +146,7 @@ module pixel_buffer (
                     //     EOL_out = 0;
                     // end
 
-                    if((loop_index_buffer[current_pixel]) == 1) begin
+                    if((loop_index_buffer[current_pixel]) == 1) begin //potential issue
                         SOF_out = 1;
                     end 
                     // else begin
